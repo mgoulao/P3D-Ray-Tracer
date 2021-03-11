@@ -86,9 +86,14 @@ public:
 		float v_s = l + (r - l) * (pixel_sample.y/this->GetResY());
 		float w_s = -n.length();
 
-		ray_dir.x = eye.x + u_s * u.x + v_s * v.x + w_s * n.x;
-		ray_dir.y = eye.y + u_s * u.y + v_s * v.y + w_s * n.y;
-		ray_dir.z = eye.z + u_s * u.z + v_s * v.z + w_s * n.z;
+		Vector s; // transform s from uvw to xyz
+		s.x = eye.x + u_s * u.x + v_s * v.x + w_s * n.x;
+		s.y = eye.y + u_s * u.y + v_s * v.y + w_s * n.y;
+		s.z = eye.z + u_s * u.z + v_s * v.z + w_s * n.z;
+
+		ray_dir = s - eye;
+		ray_dir.normalize();
+		
 		return Ray(eye, ray_dir);  
 	}
 

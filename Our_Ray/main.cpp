@@ -322,7 +322,6 @@ void renderScene()
 		}
 	
 	}
-	firstRender = false;
 	if(drawModeEnabled) {
 		drawPoints();
 		glutSwapBuffers();
