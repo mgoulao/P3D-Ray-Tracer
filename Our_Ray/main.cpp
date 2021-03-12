@@ -280,6 +280,8 @@ void timer(int value)
 }
 
 // Render function by primary ray casting from the eye towards the scene's objects
+bool first = true;
+int n_ = 0;
 void renderScene()
 {
 	int index_pos=0;
@@ -290,7 +292,6 @@ void renderScene()
 		glClear(GL_COLOR_BUFFER_BIT);
 		scene->GetCamera()->SetEye(Vector(camX, camY, camZ));  //Camera motion
 	}
-	
 	for (int y = 0; y < RES_Y; y++)
 	{
 		for (int x = 0; x < RES_X; x++)
@@ -303,8 +304,11 @@ void renderScene()
 
 			Ray ray = scene->GetCamera()->PrimaryRay(pixel);
 			color = rayTracing(ray, 1, 1.0).clamp();
-
+			/*if (first && n_ % 1000 == 0) {
+				printf("ax.scatter(%f, %f, %f)\n", ray.direction.x, ray.direction.y, ray.direction.z);
+			}*/
 			//color = scene->GetBackgroundColor(); //TO CHANGE - just for the template
+			//n_++;
 
 			img_Data[counter++] = u8fromfloat((float)color.r());
 			img_Data[counter++] = u8fromfloat((float)color.g());
@@ -322,6 +326,7 @@ void renderScene()
 		}
 	
 	}
+	first = false;
 	if(drawModeEnabled) {
 		drawPoints();
 		glutSwapBuffers();
