@@ -2,7 +2,7 @@
 #include <string>
 #include <fstream>
 #include <IL/il.h>
-
+#include <math.h>
 #include "maths.h"
 #include "scene.h"
 
@@ -52,7 +52,9 @@ Plane::Plane(Vector& P0, Vector& P1, Vector& P2)
    float l;
 
    //Calculate the normal plane: counter-clockwise vectorial product.
-   PN = Vector(0, 0, 0);		
+   Vector P01 = P1 - P0;
+   Vector P02 = P2 - P0;
+   PN = P01 % P02;		
 
    if ((l=PN.length()) == 0.0)
    {
@@ -61,8 +63,9 @@ Plane::Plane(Vector& P0, Vector& P1, Vector& P2)
    else
    {
      PN.normalize();
+	 P = P0;
 	 //Calculate D
-     D  = 0.0f;
+     D = 0; // TODO
    }
 }
 
@@ -72,8 +75,12 @@ Plane::Plane(Vector& P0, Vector& P1, Vector& P2)
 
 bool Plane::intercepts( Ray& r, float& t )
 {
-	t = 1;
-	return (false);
+	float denominator = r.direction * PN;
+	
+	if (denominator > 0) return false;
+	t = ((P - r.origin) * PN) / denominator;
+	
+	return true;
 }
 
 Vector Plane::getNormal(Vector point) 
@@ -84,7 +91,22 @@ Vector Plane::getNormal(Vector point)
 
 bool Sphere::intercepts(Ray& r, float& t )
 {
-  return (false);
+	Vector d = r.direction;
+	Vector e = r.origin;
+	Vector c = this->center;
+	float R = this->radius;
+	t = 0; 
+	float discriminator = pow((d * (e - c)), 2) - (d * d) * ((e - c) * (e - c) - R * R);
+	if (discriminator < 0) return false;
+	//float t_plus_n = -(d * (e - c) + sqrt((d * (e - c)) ^ 2 - (d * d) * ((e - c) * (e - c) - R ^ 2)));
+	float t_minus_n = -(d * (e - c) - sqrt(discriminator));
+	float t_d = d * d;
+
+	//float t_plus = t_plus_n / t_d;
+	float t_minus = t_minus_n / t_d;
+	t = t_minus;
+
+	return true;
 }
 
 

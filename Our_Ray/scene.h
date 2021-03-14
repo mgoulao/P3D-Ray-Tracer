@@ -90,8 +90,9 @@ protected:
 class Plane : public Object
 {
 protected:
-  Vector	 PN;
-  float 	 D;
+  Vector	 PN; // Plane Normal
+  Vector	 P; // Plane Point
+  float 	 D; // D???
 
 public:
 		 Plane		(Vector& PNc, float Dc);

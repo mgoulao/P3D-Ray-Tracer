@@ -81,7 +81,6 @@ int WindowHandle = 0;
 
 Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medium 1 where the ray is travelling
 {
-	//TODO: INSERT HERE YOUR CODE
 	// Find Primary ray intersections with scene objects [exercise 1]
 	// if doesn't intersect return background color: scene->GetBackgroundColor() [exercise 1]
 	// otherwise:
@@ -95,9 +94,8 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 	for (int i = 0; i < scene->getNumObjects(); i++) {
 		float t = 0;
 		Object* currentObject = scene->getObject(i);
-		currentObject->intercepts(ray, t);
-		//printf("%f \n", t);
-		if (t < closestT) {
+		bool intercepts = currentObject->intercepts(ray, t);
+		if (intercepts && t < closestT) {
 			closestT = t;
 			closestObject = currentObject;
 		}
@@ -106,7 +104,38 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 	if (closestT == FLT_MAX) {
 		return scene->GetBackgroundColor();
 	}
-	return closestObject->GetMaterial()->GetDiffColor();
+
+	Vector p = ray.origin + ray.direction * closestT;
+	Color color = Color(0,0,0);
+
+	for (int i = 0; i < scene->getNumLights(); i++) {
+		Light* currentLight = scene->getLight(i);
+		Ray shadow_ray = Ray(p, currentLight->position - p);
+		bool intercepts = false;
+		for (int j = 0; j < scene->getNumObjects(); j++) {
+			float t = 0;
+			Object* currentObject = scene->getObject(j);
+			if (currentObject->intercepts(shadow_ray, t)) {
+				intercepts = true;
+				break;
+			}
+		}
+
+		if (!intercepts) {
+			float diffuse = closestObject->GetMaterial()->GetDiffuse();
+			float specular = closestObject->GetMaterial()->GetSpecular();
+			float shine = closestObject->GetMaterial()->GetShine();
+			Color lightColor = currentLight->color;
+
+			Vector half = (shadow_ray.direction.normalize() - ray.direction.normalize()) / 2;
+			Vector n = closestObject->getNormal(Vector(0, 0, 0));
+			Vector l = shadow_ray.direction.normalize();
+			color += closestObject->GetMaterial()->GetDiffColor() * lightColor * diffuse * max(0, n * l)
+				+ closestObject->GetMaterial()->GetSpecColor() *  lightColor * specular * pow(half * n, shine);
+		}
+	}
+
+	return color;
 }
 
 /////////////////////////////////////////////////////////////////////// ERRORS
