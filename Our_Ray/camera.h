@@ -76,10 +76,10 @@ public:
 	{
 		Vector ray_dir;
 
-		float r = - w / 2;
-		float t = - h / 2;
-		float l = w / 2;
-		float b = h / 2;
+		float r =  w / 2;
+		float t =  h / 2;
+		float l = -w / 2;
+		float b = -h / 2;
 
 		float u_s = l + (r - l) * (pixel_sample.x/this->GetResX());
 		float v_s = b + (t - b) * (pixel_sample.y/this->GetResY());
