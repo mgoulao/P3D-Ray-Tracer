@@ -82,15 +82,31 @@ int WindowHandle = 0;
 Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medium 1 where the ray is travelling
 {
 	//TODO: INSERT HERE YOUR CODE
-	// Find Primary ray intersections with scene objects
-	// if doesn't intersect return background color: scene->GetBackgroundColor()
+	// Find Primary ray intersections with scene objects [exercise 1]
+	// if doesn't intersect return background color: scene->GetBackgroundColor() [exercise 1]
 	// otherwise:
 	// - compute normal
-	// - calculate color for each light source
+	// - calculate color for each light source [exercise 1]
 	// - if maxDepth return the current color
 	// - calculate for reflective color (recursive)
 	// - calculate transparent color (recursive)
-	return Color(0.0f, 0.5f, 0.0f);
+	float closestT = FLT_MAX;
+	Object* closestObject = NULL;
+	for (int i = 0; i < scene->getNumObjects(); i++) {
+		float t = 0;
+		Object* currentObject = scene->getObject(i);
+		currentObject->intercepts(ray, t);
+		//printf("%f \n", t);
+		if (t < closestT) {
+			closestT = t;
+			closestObject = currentObject;
+		}
+	}
+
+	if (closestT == FLT_MAX) {
+		return scene->GetBackgroundColor();
+	}
+	return closestObject->GetMaterial()->GetDiffColor();
 }
 
 /////////////////////////////////////////////////////////////////////// ERRORS

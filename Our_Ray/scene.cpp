@@ -72,13 +72,13 @@ Plane::Plane(Vector& P0, Vector& P1, Vector& P2)
 
 bool Plane::intercepts( Ray& r, float& t )
 {
-  
-   return (false);
+	t = 1;
+	return (false);
 }
 
 Vector Plane::getNormal(Vector point) 
 {
-  return PN;
+	return PN;
 }
 
 
