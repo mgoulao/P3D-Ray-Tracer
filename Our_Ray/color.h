@@ -60,6 +60,8 @@ public:
   Color		operator *=	(Color c)
 				{ R*=c.R; G*=c.G; B*=c.B; return *this; }
 
+  void print() { printf("Color: %f, %f, %f\n", R, G, B); }
+
    friend inline
   istream&	operator >>	(istream& s, Color& c)
 	{ return s >> c.R >> c.G >> c.B; }

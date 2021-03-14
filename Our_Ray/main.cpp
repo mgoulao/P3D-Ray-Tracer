@@ -122,16 +122,17 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 		}
 
 		if (!intercepts) {
+			
 			float diffuse = closestObject->GetMaterial()->GetDiffuse();
 			float specular = closestObject->GetMaterial()->GetSpecular();
 			float shine = closestObject->GetMaterial()->GetShine();
 			Color lightColor = currentLight->color;
 
 			Vector half = (shadow_ray.direction.normalize() - ray.direction.normalize()) / 2;
-			Vector n = closestObject->getNormal(Vector(0, 0, 0));
+			Vector n = closestObject->getNormal(p);
 			Vector l = shadow_ray.direction.normalize();
 			color += closestObject->GetMaterial()->GetDiffColor() * lightColor * diffuse * max(0, n * l)
-				+ closestObject->GetMaterial()->GetSpecColor() *  lightColor * specular * pow(half * n, shine);
+				+ closestObject->GetMaterial()->GetSpecColor() *  lightColor * specular * max(0, pow(half * n, shine));
 		}
 	}
 

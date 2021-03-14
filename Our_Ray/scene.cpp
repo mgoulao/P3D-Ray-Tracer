@@ -80,7 +80,7 @@ bool Plane::intercepts( Ray& r, float& t )
 	if (denominator > 0) return false;
 	t = ((P - r.origin) * PN) / denominator;
 	
-	return true;
+	return t > 0;
 }
 
 Vector Plane::getNormal(Vector point) 
@@ -89,7 +89,7 @@ Vector Plane::getNormal(Vector point)
 }
 
 
-bool Sphere::intercepts(Ray& r, float& t )
+bool Sphere::intercepts(Ray& r, float& t)
 {
 	Vector d = r.direction;
 	Vector e = r.origin;
@@ -98,15 +98,13 @@ bool Sphere::intercepts(Ray& r, float& t )
 	t = 0; 
 	float discriminator = pow((d * (e - c)), 2) - (d * d) * ((e - c) * (e - c) - R * R);
 	if (discriminator < 0) return false;
-	//float t_plus_n = -(d * (e - c) + sqrt((d * (e - c)) ^ 2 - (d * d) * ((e - c) * (e - c) - R ^ 2)));
-	float t_minus_n = -(d * (e - c) - sqrt(discriminator));
+	float t_minus_n = (d * -1 * (e - c) - sqrt(discriminator)) - 0.01; // TODO check if this is ok
 	float t_d = d * d;
 
-	//float t_plus = t_plus_n / t_d;
 	float t_minus = t_minus_n / t_d;
 	t = t_minus;
 
-	return true;
+	return t > 0;
 }
 
 

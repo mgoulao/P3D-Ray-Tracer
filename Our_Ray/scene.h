@@ -81,6 +81,7 @@ public:
 	virtual bool intercepts( Ray& r, float& dist ) = 0;
 	virtual Vector getNormal( Vector point ) = 0;
 	virtual AABB GetBoundingBox() { return AABB(); }
+	virtual bool isSphere() { return false; }
 
 protected:
 	Material* m_Material;
@@ -128,6 +129,7 @@ public:
 	bool intercepts( Ray& r, float& t);
 	Vector getNormal(Vector point);
 	AABB GetBoundingBox(void);
+	bool isSphere() { return true; }
 
 private:
 	Vector center;
