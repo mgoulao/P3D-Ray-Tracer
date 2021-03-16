@@ -110,7 +110,7 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 
 	for (int i = 0; i < scene->getNumLights(); i++) {
 		Light* currentLight = scene->getLight(i);
-		Ray shadow_ray = Ray(p, currentLight->position - p);
+		Ray shadow_ray = Ray(p + closestObject->getNormal(p) * 0.001, (currentLight->position - p).normalize());
 		bool intercepts = false;
 		for (int j = 0; j < scene->getNumObjects(); j++) {
 			float t = 0;
@@ -128,15 +128,15 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 			float shine = closestObject->GetMaterial()->GetShine();
 			Color lightColor = currentLight->color;
 
-			Vector half = (shadow_ray.direction.normalize() - ray.direction.normalize()) / 2;
+			Vector half = (shadow_ray.direction - ray.direction).normalize();
 			Vector n = closestObject->getNormal(p);
 			Vector l = shadow_ray.direction.normalize();
 			color += closestObject->GetMaterial()->GetDiffColor() * lightColor * diffuse * max(0, n * l)
-				+ closestObject->GetMaterial()->GetSpecColor() *  lightColor * specular * max(0, pow(half * n, shine));
+				+ closestObject->GetMaterial()->GetSpecColor() *  lightColor * specular * pow(max(0, half * n), shine);
 		}
 	}
 
-	return color;
+	return color.clamp();
 }
 
 /////////////////////////////////////////////////////////////////////// ERRORS
