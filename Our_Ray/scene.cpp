@@ -78,7 +78,7 @@ bool Plane::intercepts( Ray& r, float& t )
 	float denominator = r.direction * PN;
 	
 	if (denominator > 0) return false;
-	t = (((P - r.origin) * PN) / denominator);
+	t = ((P - r.origin) * PN) / denominator;
 	
 	return t > 0;
 }
