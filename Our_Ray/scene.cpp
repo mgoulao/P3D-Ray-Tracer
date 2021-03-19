@@ -12,7 +12,9 @@ Triangle::Triangle(Vector& P0, Vector& P1, Vector& P2)
 	points[0] = P0; points[1] = P1; points[2] = P2;
 
 	/* Calculate the normal */
-	normal = Vector(0, 0, 0);
+	Vector P01 = P1 - P0;
+	Vector P02 = P2 - P0;
+	normal = P01 % P02;
 	normal.normalize();
 
 	//Calculate the Min and Max for bounding box
@@ -38,9 +40,33 @@ Vector Triangle::getNormal(Vector point)
 // Ray/Triangle intersection test using Tomas Moller-Ben Trumbore algorithm.
 //
 
-bool Triangle::intercepts(Ray& r, float& t ) {
-
-	return (false);
+bool Triangle::intercepts(Ray& r, float& t) {
+	float a = points[0].x - points[1].x;
+	float b = points[0].y - points[1].y;
+	float c = points[0].z - points[1].z;
+	float d = points[0].x - points[2].x;
+	float e = points[0].y - points[2].y;
+	float f = points[0].z - points[2].z;
+	float g = r.direction.x;
+	float h = r.direction.y;
+	float i = r.direction.z;
+	float j = points[0].x - r.origin.x;
+	float k = points[0].y - r.origin.y;
+	float l = points[0].z - r.origin.z;
+	float M = a * (e * i - h * f) + b* (g * f - d * i) + c * (d * h - e * g);
+	t = - (f * (a * k - j * b) + e * (j * c - a * l) + d * (b * l - k * c)) / M;
+	if (t < 0) {
+		return false;
+	}
+	float gamma = (i * (a * k - j * b) + h * (j * c - a * l) + g * (b * l - k * c)) / M;
+	if (gamma < 0 || gamma > 1) {
+		return false;
+	}
+	float beta = (j * (e * i - h * f) + k * (g * f - d * i) + l * (d * h - e * g)) / M;
+	if (beta < 0 || beta > 1 - gamma) {
+		return false;
+	}
+	return true;
 }
 
 Plane::Plane(Vector& a_PN, float a_D)
@@ -96,6 +122,11 @@ bool Sphere::intercepts(Ray& r, float& t)
 	Vector c = this->center;
 	float R = this->radius;
 	t = 0; 
+
+	if ((c - e) * d < 0) { // determine first if the sphere is behind the ray origin
+		return false;
+	}
+
 	float discriminator = pow((d * (e - c)), 2) - (d * d) * ((e - c) * (e - c) - R * R);
 	if (discriminator < 0) return false;
 	float t_minus_n = (d * -1 * (e - c) - sqrt(discriminator));

@@ -79,12 +79,45 @@ int RES_X, RES_Y;
 int WindowHandle = 0;
 
 
+Color rayColor(Ray ray, Vector p, Object* closestObject) {
+	Color color = Color(0, 0, 0);
+
+	for (int i = 0; i < scene->getNumLights(); i++) {
+		Light* currentLight = scene->getLight(i);
+		Ray shadow_ray = Ray(p + closestObject->getNormal(p) * 0.001, (currentLight->position - p).normalize());
+		bool intercepts = false;
+		for (int j = 0; j < scene->getNumObjects(); j++) {
+			float t = 0;
+			Object* currentObject = scene->getObject(j);
+			if (currentObject->intercepts(shadow_ray, t)) {
+				intercepts = true;
+				break;
+			}
+		}
+
+		if (!intercepts) {
+
+			float diffuse = closestObject->GetMaterial()->GetDiffuse();
+			float specular = closestObject->GetMaterial()->GetSpecular();
+			float shine = closestObject->GetMaterial()->GetShine();
+			Color lightColor = currentLight->color;
+
+			Vector half = (shadow_ray.direction - ray.direction).normalize();
+			Vector n = closestObject->getNormal(p);
+			Vector l = shadow_ray.direction.normalize();
+			color += closestObject->GetMaterial()->GetDiffColor() * lightColor * diffuse * max(0, n * l)
+				+ closestObject->GetMaterial()->GetSpecColor() * lightColor * specular * pow(max(0, half * n), shine);
+		}
+	}
+	return color;
+}
+
 Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medium 1 where the ray is travelling
 {
 	// Find Primary ray intersections with scene objects [exercise 1]
 	// if doesn't intersect return background color: scene->GetBackgroundColor() [exercise 1]
 	// otherwise:
-	// - compute normal
+	// - compute normal  [exercise 1]
 	// - calculate color for each light source [exercise 1]
 	// - if maxDepth return the current color
 	// - calculate for reflective color (recursive)
@@ -106,38 +139,11 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 	}
 
 	Vector p = ray.origin + ray.direction * closestT;
-	Color color = Color(0,0,0);
+	
 
-	for (int i = 0; i < scene->getNumLights(); i++) {
-		Light* currentLight = scene->getLight(i);
-		Ray shadow_ray = Ray(p + closestObject->getNormal(p) * 0.001, (currentLight->position - p).normalize());
-		bool intercepts = false;
-		for (int j = 0; j < scene->getNumObjects(); j++) {
-			float t = 0;
-			Object* currentObject = scene->getObject(j);
-			if (currentObject->intercepts(shadow_ray, t)) {
-				intercepts = true;
-				break;
-			}
-		}
-
-		if (!intercepts) {
-			
-			float diffuse = closestObject->GetMaterial()->GetDiffuse();
-			float specular = closestObject->GetMaterial()->GetSpecular();
-			float shine = closestObject->GetMaterial()->GetShine();
-			Color lightColor = currentLight->color;
-
-			Vector half = (shadow_ray.direction - ray.direction).normalize();
-			Vector n = closestObject->getNormal(p);
-			Vector l = shadow_ray.direction.normalize();
-			color += closestObject->GetMaterial()->GetDiffColor() * lightColor * diffuse * max(0, n * l)
-				+ closestObject->GetMaterial()->GetSpecColor() *  lightColor * specular * pow(max(0, half * n), shine);
-		}
-	}
-
-	return color.clamp();
+	return rayColor(ray, p, closestObject);
 }
+
 
 /////////////////////////////////////////////////////////////////////// ERRORS
 
