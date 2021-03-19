@@ -98,7 +98,7 @@ bool Sphere::intercepts(Ray& r, float& t)
 	t = 0; 
 	float discriminator = pow((d * (e - c)), 2) - (d * d) * ((e - c) * (e - c) - R * R);
 	if (discriminator < 0) return false;
-	float t_minus_n = (d * -1 * (e - c) - sqrt(discriminator)) - 0.01; // TODO check if this is ok
+	float t_minus_n = (d * -1 * (e - c) - sqrt(discriminator));
 	float t_d = d * d;
 
 	float t_minus = t_minus_n / t_d;
