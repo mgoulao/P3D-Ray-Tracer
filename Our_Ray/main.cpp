@@ -78,18 +78,30 @@ int RES_X, RES_Y;
 
 int WindowHandle = 0;
 
+struct HitRecord{
+	Vector p;
+	Vector n;
+	Object* object;
+};
 
-Color rayColor(Ray ray, Vector p, Object* closestObject, int depth) {
+Color rayTracing(Ray ray, int depth, float ior_1);
+
+Color rayColor(Ray ray, HitRecord hitRecord, int depth) {
+	Object* closestObject = hitRecord.object;
+	Vector n = hitRecord.n;
+	Vector p = hitRecord.p;
 	Color color = Color(0, 0, 0);
 
+	// Calculate lights' contributions
 	for (int i = 0; i < scene->getNumLights(); i++) {
 		Light* currentLight = scene->getLight(i);
-		Ray shadow_ray = Ray(p + closestObject->getNormal(p) * 0.001, (currentLight->position - p).normalize());
+		Ray shadowRay = Ray(p + n * 0.001, (currentLight->position - p).normalize());
+
 		bool intercepts = false;
 		for (int j = 0; j < scene->getNumObjects(); j++) {
 			float t = 0;
 			Object* currentObject = scene->getObject(j);
-			if (currentObject->intercepts(shadow_ray, t)) {
+			if (currentObject->intercepts(shadowRay, t)) {
 				intercepts = true;
 				break;
 			}
@@ -102,22 +114,19 @@ Color rayColor(Ray ray, Vector p, Object* closestObject, int depth) {
 			float shine = closestObject->GetMaterial()->GetShine();
 			Color lightColor = currentLight->color;
 
-			Vector half = (shadow_ray.direction - ray.direction).normalize();
-			Vector n = closestObject->getNormal(p);
-			Vector l = shadow_ray.direction.normalize();
+			Vector half = (shadowRay.direction - ray.direction).normalize();
+			Vector l = shadowRay.direction.normalize();
 			color += closestObject->GetMaterial()->GetDiffColor() * lightColor * diffuse * max(0, n * l)
 				+ closestObject->GetMaterial()->GetSpecColor() * lightColor * specular * pow(max(0, half * n), shine);
 		}
 	}
 
-	/*  if (depth == MAX_DEPTH) return color
 	
-		if (Reflective Object){
-			rRay = calculate ray in the reflected direction;
-			rColor = trace(scene, point, rRay direction, depth+1);
-			reduce rColor by the specular reflection coefficient and add to color; 
-		}
-	
+	if (closestObject->GetMaterial()->GetReflection()) {
+		Ray reflectionRay = Ray(p + n * 0.001, ray.direction + n * (ray.direction * n) * 2 * -1);
+		color = color + rayTracing(reflectionRay, depth + 1, 1.0) * closestObject->GetMaterial()->GetReflection();
+	}
+	/*
 		if (transparent object) {
 			tRay = calculate ray in the refracted direction;
 			tColor = trace(scene, point, tRay direction, depth+1);
@@ -138,8 +147,12 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 	// - if maxDepth return the current color
 	// - calculate for reflective color (recursive)
 	// - calculate transparent color (recursive)
+
 	float closestT = FLT_MAX;
 	Object* closestObject = NULL;
+
+	if (depth == MAX_DEPTH) return Color(0,0,0);
+
 	for (int i = 0; i < scene->getNumObjects(); i++) {
 		float t = 0;
 		Object* currentObject = scene->getObject(i);
@@ -153,11 +166,12 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 	if (closestT == FLT_MAX) {
 		return scene->GetBackgroundColor();
 	}
-
-	Vector p = ray.origin + ray.direction * closestT;
 	
-
-	return rayColor(ray, p, closestObject, 0);
+	HitRecord hitRecord;
+	hitRecord.p = ray.origin + ray.direction * closestT;
+	hitRecord.n = closestObject->getNormal(hitRecord.p);
+	hitRecord.object = closestObject;
+	return rayColor(ray, hitRecord, depth);
 }
 
 
@@ -371,7 +385,7 @@ void renderScene()
 			pixel.y = y + 0.5f;
 
 			Ray ray = scene->GetCamera()->PrimaryRay(pixel);
-			color = rayTracing(ray, 1, 1.0).clamp();
+			color = rayTracing(ray, 0, 1.0).clamp();
 			/*if (first && n_ % 1000 == 0) {
 				printf("ax.scatter(%f, %f, %f)\n", ray.direction.x, ray.direction.y, ray.direction.z);
 			}*/
