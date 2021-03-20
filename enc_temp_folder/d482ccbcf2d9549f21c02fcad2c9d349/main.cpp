@@ -79,7 +79,7 @@ int RES_X, RES_Y;
 int WindowHandle = 0;
 
 
-Color rayColor(Ray ray, Vector p, Object* closestObject, int depth) {
+Color rayColor(Ray ray, Vector p, Object* closestObject) {
 	Color color = Color(0, 0, 0);
 
 	for (int i = 0; i < scene->getNumLights(); i++) {
@@ -109,22 +109,6 @@ Color rayColor(Ray ray, Vector p, Object* closestObject, int depth) {
 				+ closestObject->GetMaterial()->GetSpecColor() * lightColor * specular * pow(max(0, half * n), shine);
 		}
 	}
-
-	/*  if (depth == MAX_DEPTH) return color
-	
-		if (Reflective Object){
-			rRay = calculate ray in the reflected direction;
-			rColor = trace(scene, point, rRay direction, depth+1);
-			reduce rColor by the specular reflection coefficient and add to color; 
-		}
-	
-		if (transparent object) {
-			tRay = calculate ray in the refracted direction;
-			tColor = trace(scene, point, tRay direction, depth+1);
-			reduce tColor by the transmittance coefficient and add to color; 
-		}
-	
-	*/
 	return color;
 }
 
@@ -157,7 +141,7 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 	Vector p = ray.origin + ray.direction * closestT;
 	
 
-	return rayColor(ray, p, closestObject, 0);
+	return rayColor(ray, p, closestObject);
 }
 
 
