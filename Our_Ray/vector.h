@@ -17,6 +17,7 @@ public:
 	Vector&	normalize();
 	Vector operator=(const Vector& v);
 	Vector operator+( const Vector& v );
+	Vector operator-();
 	Vector operator-( const Vector& v );
 	Vector operator*( float f );
 	float  operator*(const Vector& v);   //inner product

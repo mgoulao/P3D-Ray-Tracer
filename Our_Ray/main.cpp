@@ -81,21 +81,25 @@ int WindowHandle = 0;
 struct HitRecord{
 	Vector p;
 	Vector n;
+	bool frontFace;
 	Object* object;
 };
 
 Color rayTracing(Ray ray, int depth, float ior_1);
 
-Color rayColor(Ray ray, HitRecord hitRecord, int depth) {
+Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1) {
 	Object* closestObject = hitRecord.object;
 	Vector n = hitRecord.n;
 	Vector p = hitRecord.p;
+	bool frontFace = hitRecord.frontFace;
+	Vector d = ray.direction;
+	Vector o = ray.origin;
 	Color color = Color(0, 0, 0);
 
 	// Calculate lights' contributions
 	for (int i = 0; i < scene->getNumLights(); i++) {
 		Light* currentLight = scene->getLight(i);
-		Ray shadowRay = Ray(p + n * 0.001, (currentLight->position - p).normalize());
+		Ray shadowRay = Ray(p + n * 0.0001, (currentLight->position - p).normalize());
 
 		bool intercepts = false;
 		for (int j = 0; j < scene->getNumObjects(); j++) {
@@ -114,26 +118,42 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth) {
 			float shine = closestObject->GetMaterial()->GetShine();
 			Color lightColor = currentLight->color;
 
-			Vector half = (shadowRay.direction - ray.direction).normalize();
+			Vector half = (shadowRay.direction - d).normalize();
 			Vector l = shadowRay.direction.normalize();
 			color += closestObject->GetMaterial()->GetDiffColor() * lightColor * diffuse * max(0, n * l)
 				+ closestObject->GetMaterial()->GetSpecColor() * lightColor * specular * pow(max(0, half * n), shine);
 		}
 	}
 
-	
-	if (closestObject->GetMaterial()->GetReflection()) {
-		Ray reflectionRay = Ray(p + n * 0.001, ray.direction + n * (ray.direction * n) * 2 * -1);
-		color = color + rayTracing(reflectionRay, depth + 1, 1.0) * closestObject->GetMaterial()->GetReflection();
-	}
-	/*
-		if (transparent object) {
-			tRay = calculate ray in the refracted direction;
-			tColor = trace(scene, point, tRay direction, depth+1);
-			reduce tColor by the transmittance coefficient and add to color; 
+	float reflection = closestObject->GetMaterial()->GetReflection();
+	float transmittance = closestObject->GetMaterial()->GetTransmittance();
+	float ior_2 = closestObject->GetMaterial()->GetRefrIndex();
+	if (transmittance) {
+		float eta_i = ior_1;
+		float eta_t = frontFace ? ior_2 : 1.0;
+		Vector p_ = frontFace ? p - n * 0.0001 : p + n * 0.0001;
+		float discriminator = 1 - ((1 - pow(d * n, 2)) * pow(eta_i, 2)) / pow(eta_t, 2);
+		if (discriminator < 0) {
+			reflection = 1; // total reflection
 		}
+		else {
+			Vector t_ = ((d - n * (d * n)) * eta_i) / eta_t - n * sqrt(discriminator);
+			float r_0 = pow((eta_i - eta_t) / (eta_i + eta_t), 2);
+			float cosTheta = frontFace ? (-d * n) : (t_ * n);
+			reflection = r_0 + (1 - r_0) * (1 - cosTheta);
+			Ray transmissionRay = Ray(p_, t_);
+			color = color + rayTracing(transmissionRay, depth + 1, eta_t) * (1 - reflection) * transmittance;
+		}
+	}
+
+	if (reflection) {
+		Vector p_ = frontFace ? p + n * 0.0001 : p - n * 0.0001;
+		Ray reflectionRay = Ray(p_, d - n * (d * n) * 2);
+		color = color + rayTracing(reflectionRay, depth + 1, ior_1) * reflection;
+	}
 	
-	*/
+	
+	
 	return color;
 }
 
@@ -171,7 +191,8 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 	hitRecord.p = ray.origin + ray.direction * closestT;
 	hitRecord.n = closestObject->getNormal(hitRecord.p);
 	hitRecord.object = closestObject;
-	return rayColor(ray, hitRecord, depth);
+	hitRecord.frontFace = ray.direction * hitRecord.n < 0;
+	return rayColor(ray, hitRecord, depth, ior_1);
 }
 
 
