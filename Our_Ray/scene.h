@@ -27,7 +27,6 @@ typedef enum { RIGHT, LEFT, TOP, BOTTOM, FRONT, BACK } CubeMap;
 
 #define EPSILON			0.0001f
 
-
 class Material
 {
 public:
@@ -151,6 +150,20 @@ private:
 	Vector Normal;
 };
 
+struct HitRecord {
+	Vector p;
+	Vector n;
+	bool frontFace;
+	Object* object;
+};
+
+class Physics
+{
+public:
+	static Ray reflection(HitRecord hit, Vector& d);
+	static Ray refraction(HitRecord hit, Vector& d, float eta_i, float eta_t, float* reflection);
+	static float reflectivity(HitRecord hit, Vector& d, Vector& t, float eta_i, float eta_t);
+};
 
 class Scene
 {

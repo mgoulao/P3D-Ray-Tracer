@@ -171,6 +171,32 @@ Vector aaBox::getNormal(Vector point)
 	return Normal;
 }
 
+Ray Physics::reflection(HitRecord hit, Vector& d) {
+	return Ray(hit.frontFace ? hit.p + hit.n * 0.0001 : hit.p - hit.n * 0.0001, d - hit.n * (d * hit.n) * 2);
+}
+
+Ray Physics::refraction(HitRecord hit, Vector& d, float eta_i, float eta_t, float* reflection) {
+	Vector p_ = hit.frontFace ? hit.p - hit.n * 0.0001 : hit.p + hit.n * 0.0001;
+	float discriminator = 1 - ((1 - pow(d * hit.n, 2)) * pow(eta_i, 2)) / pow(eta_t, 2);
+	if (discriminator < 0) {
+		*reflection = 1; // total reflection
+		return Ray(p_, Vector(0,0,0));
+	}
+	else {
+		Vector t_ = ((d - hit.n * (d * hit.n)) * eta_i) / eta_t - hit.n * sqrt(discriminator);
+		*reflection = Physics::reflectivity(hit, d, t_, eta_i, eta_t);
+		return Ray(p_, t_);
+	}
+}
+
+float Physics::reflectivity(HitRecord hit, Vector& d, Vector& t, float eta_i, float eta_t) {
+		float r_0 = pow((eta_i - eta_t) / (eta_i + eta_t), 2);
+		float cosTheta = hit.frontFace ? (-d * hit.n) : (t * hit.n);
+		return r_0 + (1 - r_0) * (1 - cosTheta);
+}
+
+
+
 Scene::Scene()
 {}
 

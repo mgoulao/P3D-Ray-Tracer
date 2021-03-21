@@ -78,13 +78,6 @@ int RES_X, RES_Y;
 
 int WindowHandle = 0;
 
-struct HitRecord{
-	Vector p;
-	Vector n;
-	bool frontFace;
-	Object* object;
-};
-
 Color rayTracing(Ray ray, int depth, float ior_1);
 
 Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1) {
@@ -99,7 +92,8 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1) {
 	// Calculate lights' contributions
 	for (int i = 0; i < scene->getNumLights(); i++) {
 		Light* currentLight = scene->getLight(i);
-		Ray shadowRay = Ray(p + n * 0.0001, (currentLight->position - p).normalize());
+		Vector p_ = frontFace ? p + n * 0.0001 : p - n * 0.0001;
+		Ray shadowRay = Ray(p_, (currentLight->position - p).normalize());
 
 		bool intercepts = false;
 		for (int j = 0; j < scene->getNumObjects(); j++) {
@@ -112,7 +106,6 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1) {
 		}
 
 		if (!intercepts) {
-
 			float diffuse = closestObject->GetMaterial()->GetDiffuse();
 			float specular = closestObject->GetMaterial()->GetSpecular();
 			float shine = closestObject->GetMaterial()->GetShine();
@@ -131,43 +124,22 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1) {
 	if (transmittance) {
 		float eta_i = ior_1;
 		float eta_t = frontFace ? ior_2 : 1.0;
-		Vector p_ = frontFace ? p - n * 0.0001 : p + n * 0.0001;
-		float discriminator = 1 - ((1 - pow(d * n, 2)) * pow(eta_i, 2)) / pow(eta_t, 2);
-		if (discriminator < 0) {
-			reflection = 1; // total reflection
-		}
-		else {
-			Vector t_ = ((d - n * (d * n)) * eta_i) / eta_t - n * sqrt(discriminator);
-			float r_0 = pow((eta_i - eta_t) / (eta_i + eta_t), 2);
-			float cosTheta = frontFace ? (-d * n) : (t_ * n);
-			reflection = r_0 + (1 - r_0) * (1 - cosTheta);
-			Ray transmissionRay = Ray(p_, t_);
-			color = color + rayTracing(transmissionRay, depth + 1, eta_t) * (1 - reflection) * transmittance;
+		Ray transmissionRay = Physics::refraction(hitRecord, d, eta_i, eta_t, &reflection);
+		if (reflection != 1) {
+			color = color + rayTracing(transmissionRay, depth + 1, eta_t) * (1 - reflection);
 		}
 	}
 
 	if (reflection) {
-		Vector p_ = frontFace ? p + n * 0.0001 : p - n * 0.0001;
-		Ray reflectionRay = Ray(p_, d - n * (d * n) * 2);
+		Ray reflectionRay = Physics::reflection(hitRecord, d);
 		color = color + rayTracing(reflectionRay, depth + 1, ior_1) * reflection;
 	}
-	
-	
 	
 	return color;
 }
 
 Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medium 1 where the ray is travelling
 {
-	// Find Primary ray intersections with scene objects [exercise 1]
-	// if doesn't intersect return background color: scene->GetBackgroundColor() [exercise 1]
-	// otherwise:
-	// - compute normal  [exercise 1]
-	// - calculate color for each light source [exercise 1]
-	// - if maxDepth return the current color
-	// - calculate for reflective color (recursive)
-	// - calculate transparent color (recursive)
-
 	float closestT = FLT_MAX;
 	Object* closestObject = NULL;
 
