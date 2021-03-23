@@ -30,7 +30,7 @@
 #define VERTEX_COORD_ATTRIB 0
 #define COLOR_ATTRIB 1
 
-#define MAX_DEPTH 4
+#define MAX_DEPTH 5
 
 unsigned int FrameCount = 0;
 
@@ -121,16 +121,21 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1) {
 	float reflection = closestObject->GetMaterial()->GetReflection();
 	float transmittance = closestObject->GetMaterial()->GetTransmittance();
 	float ior_2 = closestObject->GetMaterial()->GetRefrIndex();
-	if (transmittance) {
+
+	if (transmittance == 1) {
 		float eta_i = ior_1;
 		float eta_t = frontFace ? ior_2 : 1.0;
-		Ray transmissionRay = Physics::refraction(hitRecord, d, eta_i, eta_t, &reflection);
-		if (reflection != 1) {
-			color = color + rayTracing(transmissionRay, depth + 1, eta_t) * (1 - reflection);
-		}
-	}
 
-	if (reflection) {
+		Ray transmissionRay = Physics::refraction(hitRecord, d, eta_i, eta_t, &reflection);
+		Ray reflectionRay = Physics::reflection(hitRecord, d);
+
+		if (reflection == 1) {
+			color += rayTracing(reflectionRay, depth + 1, ior_1);
+		}
+		else {
+			color = color + rayTracing(reflectionRay, depth + 1, ior_1) * reflection + rayTracing(transmissionRay, depth + 1, eta_t) * (1 - reflection);
+		}
+	} else if (reflection) {
 		Ray reflectionRay = Physics::reflection(hitRecord, d);
 		color = color + rayTracing(reflectionRay, depth + 1, ior_1) * reflection;
 	}
@@ -160,10 +165,12 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 	}
 	
 	HitRecord hitRecord;
+	
 	hitRecord.p = ray.origin + ray.direction * closestT;
 	hitRecord.n = closestObject->getNormal(hitRecord.p);
 	hitRecord.object = closestObject;
-	hitRecord.frontFace = ray.direction * hitRecord.n < 0;
+	hitRecord.frontFace = (ray.direction * hitRecord.n) < 0;
+
 	return rayColor(ray, hitRecord, depth, ior_1);
 }
 
