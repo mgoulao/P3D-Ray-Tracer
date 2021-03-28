@@ -401,7 +401,7 @@ void renderScene()
 					pixel.y = y + (q + offSetY) / N;
 
 					Ray ray = scene->GetCamera()->PrimaryRay(pixel);
-					color += rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / (N2);
+					color += rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / (N*N);
 				}
 			}
 			img_Data[counter++] = u8fromfloat((float)color.r());
