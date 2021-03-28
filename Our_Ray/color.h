@@ -46,6 +46,10 @@ public:
   Color 	operator *	(float c) 
         			{ return Color(R*c, G*c, B*c); }
 
+  Color 	operator /	(float c)
+  {
+	  return Color(R / c, G / c, B / c);
+  }
 
   Color		operator *=	(float c)
         			{ R*=c; G*=c; B*=c; return *this; }
