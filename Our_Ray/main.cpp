@@ -30,7 +30,12 @@
 #define VERTEX_COORD_ATTRIB 0
 #define COLOR_ATTRIB 1
 
-#define MAX_DEPTH 10
+#define MAX_DEPTH 5
+
+#define N 3 // super-sampling: 1 - disabled, >1 - enabled
+#define N2 9 // n * n
+
+bool jittering = true;
 
 unsigned int FrameCount = 0;
 
@@ -78,9 +83,9 @@ int RES_X, RES_Y;
 
 int WindowHandle = 0;
 
-Color rayTracing(Ray ray, int depth, float ior_1);
+Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample);
 
-Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1) {
+Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass_sample) {
 	Object* closestObject = hitRecord.object;
 	Vector n = hitRecord.n;
 	Vector p = hitRecord.p;
@@ -92,8 +97,9 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1) {
 	// Calculate lights' contributions
 	for (int i = 0; i < scene->getNumLights(); i++) {
 		Light* currentLight = scene->getLight(i);
+		Vector currentLightPosition = currentLight->position + Vector(0.2, 0, 0) * (pass_sample.x - 0.5) + Vector(0, .2, 0) * (pass_sample.y - 0.5);
 		Vector p_ = frontFace ? p + n * 0.0001 : p - n * 0.0001;
-		Ray shadowRay = Ray(p_, (currentLight->position - p).normalize());
+		Ray shadowRay = Ray(p_, (currentLightPosition - p_).normalize());
 
 		bool intercepts = false;
 		for (int j = 0; j < scene->getNumObjects(); j++) {
@@ -130,20 +136,20 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1) {
 		Ray reflectionRay = Physics::reflection(hitRecord, d);
 
 		if (reflection == 1) {
-			color += rayTracing(reflectionRay, depth + 1, ior_1) * closestObject->GetMaterial()->GetSpecColor();
+			color += rayTracing(reflectionRay, depth + 1, ior_1, pass_sample) * closestObject->GetMaterial()->GetSpecColor();
 		}
 		else {
-			color = color + rayTracing(reflectionRay, depth + 1, ior_1) * reflection + rayTracing(transmissionRay, depth + 1, eta_t) * (1 - reflection);
+			color = color + rayTracing(reflectionRay, depth + 1, ior_1, pass_sample) * reflection + rayTracing(transmissionRay, depth + 1, eta_t, pass_sample) * (1 - reflection);
 		}
 	} else if (reflection) {
 		Ray reflectionRay = Physics::reflection(hitRecord, d);
-		color = color + rayTracing(reflectionRay, depth + 1, ior_1) * reflection * closestObject->GetMaterial()->GetSpecColor();
+		color = color + rayTracing(reflectionRay, depth + 1, ior_1, pass_sample) * reflection * closestObject->GetMaterial()->GetSpecColor();
 	}
 	
 	return color;
 }
 
-Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medium 1 where the ray is travelling
+Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index of refraction of medium 1 where the ray is travelling
 {
 	float closestT = FLT_MAX;
 	Object* closestObject = NULL;
@@ -171,7 +177,7 @@ Color rayTracing(Ray ray, int depth, float ior_1)  //index of refraction of medi
 	hitRecord.object = closestObject;
 	hitRecord.frontFace = (ray.direction * hitRecord.n) < 0;
 
-	return rayColor(ray, hitRecord, depth, ior_1);
+	return rayColor(ray, hitRecord, depth, ior_1, pass_sample);
 }
 
 
@@ -362,8 +368,6 @@ void timer(int value)
 }
 
 // Render function by primary ray casting from the eye towards the scene's objects
-bool first = true;
-int n_ = 0;
 void renderScene()
 {
 	int index_pos=0;
@@ -374,24 +378,32 @@ void renderScene()
 		glClear(GL_COLOR_BUFFER_BIT);
 		scene->GetCamera()->SetEye(Vector(camX, camY, camZ));  //Camera motion
 	}
+
 	for (int y = 0; y < RES_Y; y++)
 	{
 		for (int x = 0; x < RES_X; x++)
 		{
-			Color color; 
-
+			Color color = Color(0,0,0); 
 			Vector pixel;  //viewport coordinates
-			pixel.x = x + 0.5f;  
-			pixel.y = y + 0.5f;
 
-			Ray ray = scene->GetCamera()->PrimaryRay(pixel);
-			color = rayTracing(ray, 0, 1.0).clamp();
-			/*if (first && n_ % 1000 == 0) {
-				printf("ax.scatter(%f, %f, %f)\n", ray.direction.x, ray.direction.y, ray.direction.z);
-			}*/
-			//color = scene->GetBackgroundColor(); //TO CHANGE - just for the template
-			//n_++;
+			Vector r[N2], s[N2];
 
+			for (int i = 0; i < N2; i++) {
+				r[i] = Vector((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, 0);
+				s[i] = Vector((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, 0);
+			}
+			
+			for (int p = 0; p < N; p++) {
+				for (int q = 0; q < N; q++) {
+					float offSetX = jittering ? r[p * N + q].x : 0.5f;
+					float offSetY = jittering ? r[p * N + q].y : 0.5f;
+					pixel.x = x + (p + offSetX) / N;
+					pixel.y = y + (q + offSetY) / N;
+
+					Ray ray = scene->GetCamera()->PrimaryRay(pixel);
+					color += rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / (N*N);
+				}
+			}
 			img_Data[counter++] = u8fromfloat((float)color.r());
 			img_Data[counter++] = u8fromfloat((float)color.g());
 			img_Data[counter++] = u8fromfloat((float)color.b());
@@ -408,7 +420,6 @@ void renderScene()
 		}
 	
 	}
-	first = false;
 	if(drawModeEnabled) {
 		drawPoints();
 		glutSwapBuffers();
