@@ -30,7 +30,7 @@
 #define VERTEX_COORD_ATTRIB 0
 #define COLOR_ATTRIB 1
 
-#define MAX_DEPTH 5
+#define MAX_DEPTH 4
 
 unsigned int FrameCount = 0;
 

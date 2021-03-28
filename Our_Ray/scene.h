@@ -146,7 +146,6 @@ public:
 private:
 	Vector min;
 	Vector max;
-
 	Vector Normal;
 };
 
