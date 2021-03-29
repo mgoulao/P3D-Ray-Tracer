@@ -85,7 +85,7 @@ int WindowHandle = 0;
 
 Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample);
 
-Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector passSample) {
+Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass_sample) {
 	Object* closestObject = hitRecord.object;
 	Vector n = hitRecord.n;
 	Vector p = hitRecord.p;
@@ -97,7 +97,7 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass
 	// Calculate lights' contributions
 	for (int i = 0; i < scene->getNumLights(); i++) {
 		Light* currentLight = scene->getLight(i);
-		Vector currentLightPosition = currentLight->sampleLight(passSample);
+		Vector currentLightPosition = currentLight->position + Vector(0.2, 0, 0) * (pass_sample.x - 0.5) + Vector(0, .2, 0) * (pass_sample.y - 0.5);
 		Vector p_ = frontFace ? p + n * 0.0001 : p - n * 0.0001;
 		Ray shadowRay = Ray(p_, (currentLightPosition - p_).normalize());
 
@@ -136,14 +136,14 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass
 		Ray reflectionRay = Physics::reflection(hitRecord, d);
 
 		if (reflection == 1) {
-			color += rayTracing(reflectionRay, depth + 1, ior_1, passSample) * closestObject->GetMaterial()->GetSpecColor();
+			color += rayTracing(reflectionRay, depth + 1, ior_1, pass_sample) * closestObject->GetMaterial()->GetSpecColor();
 		}
 		else {
-			color = color + rayTracing(reflectionRay, depth + 1, ior_1, passSample) * reflection + rayTracing(transmissionRay, depth + 1, eta_t, passSample) * (1 - reflection);
+			color = color + rayTracing(reflectionRay, depth + 1, ior_1, pass_sample) * reflection + rayTracing(transmissionRay, depth + 1, eta_t, pass_sample) * (1 - reflection);
 		}
 	} else if (reflection) {
 		Ray reflectionRay = Physics::reflection(hitRecord, d);
-		color = color + rayTracing(reflectionRay, depth + 1, ior_1, passSample) * reflection * closestObject->GetMaterial()->GetSpecColor();
+		color = color + rayTracing(reflectionRay, depth + 1, ior_1, pass_sample) * reflection * closestObject->GetMaterial()->GetSpecColor();
 	}
 	
 	return color;
@@ -401,7 +401,7 @@ void renderScene()
 					pixel.y = y + (q + offSetY) / N;
 
 					Ray ray = scene->GetCamera()->PrimaryRay(pixel);
-					color += rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / (N2);
+					color += rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / (N*N);
 				}
 			}
 			img_Data[counter++] = u8fromfloat((float)color.r());
