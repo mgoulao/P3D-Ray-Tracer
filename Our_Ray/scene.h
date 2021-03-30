@@ -66,9 +66,28 @@ class Light
 public:
 
 	Light( Vector& pos, Color& col ): position(pos), color(col) {};
-	
+	virtual Vector sampleLight(Vector passSample);
+
 	Vector position;
 	Color color;
+};
+
+class AreaLight : public Light
+{
+public:
+
+	AreaLight(Vector& pos, Color& col, Vector at, float width, float height) : Light(pos, col) {
+		Vector P2 = (pos - at);
+		float distance = P2.length();
+		P2 = P2 / distance;
+		P0 = Vector(0,0,1) % P2;
+		P0 = (P0 / P0.length()) * width;
+		P1 = (P2 % P0) * height;
+	};
+	Vector sampleLight(Vector passSample);
+
+	Vector P0;
+	Vector P1;
 };
 
 class Object

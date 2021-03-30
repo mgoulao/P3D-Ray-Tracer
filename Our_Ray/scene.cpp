@@ -6,6 +6,15 @@
 #include "maths.h"
 #include "scene.h"
 
+Vector Light::sampleLight(Vector passSample) {
+	return position;
+}
+
+Vector AreaLight::sampleLight(Vector passSample) {
+	P0;
+	P1;
+	return position + P0 * (passSample.x - 0.5) + P1 * (passSample.y - 0.5);
+}
 
 Triangle::Triangle(Vector& P0, Vector& P1, Vector& P2)
 {
@@ -580,6 +589,18 @@ bool Scene::load_p3f(const char *name)
 	      this->addLight(new Light(pos, color));
 	    
       }
+	  else if (cmd == "al")
+	  {
+		  Vector pos;
+		  Vector at;
+		  float width, height;
+		  Color color;
+
+		  file >> pos >> at >> width >> height >> color;
+
+		  this->addLight(new AreaLight(pos, color, at, width, height));
+
+	  }
       else if (cmd == "v")
       {
 	    Vector up, from, at;
