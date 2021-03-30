@@ -1,4 +1,4 @@
- ///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 //
 // P3D Course
 // (c) 2021 by João Madeiras Pereira
@@ -34,6 +34,8 @@
 
 #define N 4 // super-sampling: 1 - disabled, >1 - enabled
 #define N2 N*N // n * n
+
+#define N_LIGHT_DECOMPOSE 1
 
 bool jittering = true;
 
@@ -93,6 +95,8 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass
 	Vector d = ray.direction;
 	Vector o = ray.origin;
 	Color color = Color(0, 0, 0);
+
+	vector<Light*> lights;
 
 	// Calculate lights' contributions
 	for (int i = 0; i < scene->getNumLights(); i++) {
@@ -658,7 +662,7 @@ void init_scene(void)
 	char input_user[50];
 	char scene_name[70];
 
-	scene = new Scene();
+	scene = new Scene(N_LIGHT_DECOMPOSE);
 
 	if (P3F_scene) {  //Loading a P3F scene
 

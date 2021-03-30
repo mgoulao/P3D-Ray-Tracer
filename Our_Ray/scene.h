@@ -37,6 +37,10 @@ public:
 	Material (Color& c, float Kd, Color& cs, float Ks, float Shine, float T, float ior) {
 		m_diffColor = c; m_Diff = Kd; m_specColor = cs; m_Spec = Ks; m_Shine = Shine; m_Refl = Ks; m_T = T; m_RIndex = ior;
 	}
+	Material(Color& c, float Kd, Color& cs, float Ks, float Shine, float T, float ior, float roughness) {
+		m_diffColor = c; m_Diff = Kd; m_specColor = cs; m_Spec = Ks; m_Shine = Shine; m_Refl = Ks; m_T = T; m_RIndex = ior; m_Roughness = roughness;
+	}
+
 
 	void SetDiffColor( Color& a_Color ) { m_diffColor = a_Color; }
 	Color GetDiffColor() { return m_diffColor; }
@@ -54,11 +58,13 @@ public:
 	float GetTransmittance() { return m_T; }
 	void SetRefrIndex( float a_ior ) { m_RIndex = a_ior; }
 	float GetRefrIndex() { return m_RIndex; }
+	float GetRoughness() { return m_Roughness; }
 private:
 	Color m_diffColor, m_specColor;
 	float m_Refl, m_T;
 	float m_Diff, m_Shine, m_Spec;
 	float m_RIndex;
+	float m_Roughness;
 };
 
 class Light
@@ -85,6 +91,7 @@ public:
 		P1 = (P2 % P0) * height;
 	};
 	Vector sampleLight(Vector passSample);
+	vector<Light*> decompose(int n);
 
 	Vector P0;
 	Vector P1;
@@ -186,7 +193,7 @@ public:
 class Scene
 {
 public:
-	Scene();
+	Scene(int decomposeLights);
 	virtual ~Scene();
 	
 	Camera* GetCamera() { return camera; }
@@ -218,6 +225,7 @@ private:
 	Color bgColor;  //Background color
 
 	bool SkyBoxFlg = false;
+	int decomposeLights = 1;
 
 	struct {
 		ILubyte *img;

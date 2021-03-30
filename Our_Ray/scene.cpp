@@ -1,10 +1,12 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <IL/il.h>
 #include <math.h>
 #include "maths.h"
 #include "scene.h"
+#include "sampler.h"
 
 Vector Light::sampleLight(Vector passSample) {
 	return position;
@@ -14,6 +16,18 @@ Vector AreaLight::sampleLight(Vector passSample) {
 	P0;
 	P1;
 	return position + P0 * (passSample.x - 0.5) + P1 * (passSample.y - 0.5);
+}
+
+vector<Light*> AreaLight::decompose(int n) {
+	float factor = 1 / (float) n;
+	vector<Light*> decomposedLights;
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			Vector point = P0 * (i + 0.5) * factor + P1 * (j + 0.5) * factor + position;
+			decomposedLights.push_back(new Light(point, color/(n*n)));
+		}
+	}
+	return decomposedLights;
 }
 
 Triangle::Triangle(Vector& P0, Vector& P1, Vector& P2)
@@ -260,7 +274,8 @@ Vector aaBox::getNormal(Vector point)
 
 Ray Physics::reflection(HitRecord hit, Vector& d) {
 	Vector n = hit.frontFace ? hit.n : -hit.n;
-	return Ray(hit.p + n * 0.0001, d - n * (d * n) * 2);
+	Vector r = d - n * (d * n) * 2;
+	return Ray(hit.p + n * 0.0001, (r + sample_unit_sphere() * hit.object->GetMaterial()->GetRoughness()).normalize());
 }
 
 Ray Physics::refraction(HitRecord hit, Vector& d, float eta_i, float eta_t, float* reflection) {
@@ -284,8 +299,9 @@ float Physics::reflectivity(HitRecord hit, Vector& d, Vector& t, float eta_i, fl
 	return r_0 + (1 - r_0) * pow(1 - cosTheta, 5);
 }
 
-Scene::Scene()
-{}
+Scene::Scene(int decomposeLights_){
+	decomposeLights = decomposeLights_;
+}
 
 Scene::~Scene()
 {
@@ -496,12 +512,15 @@ bool Scene::load_p3f(const char *name)
       
 	  if (cmd == "f")   //Material
       {
-	    double Kd, Ks, Shine, T, ior;
+	    double Kd, Ks, Shine, T, ior, roughness;
 	    Color cd, cs;
+		string s;
+		getline(file, s);
+		istringstream iss(s);
 
-	    file >> cd >> Kd >> cs >> Ks >> Shine >> T >> ior;
+		iss >> cd >> Kd >> cs >> Ks >> Shine >> T >> ior >> roughness;
 
-	    material = new Material(cd, Kd, cs, Ks, Shine, T, ior);
+		material = new Material(cd, Kd, cs, Ks, Shine, T, ior, roughness);
       }
 
       else if (cmd == "s")    //Sphere
@@ -598,8 +617,17 @@ bool Scene::load_p3f(const char *name)
 
 		  file >> pos >> at >> width >> height >> color;
 
-		  this->addLight(new AreaLight(pos, color, at, width, height));
+		  AreaLight* light = new AreaLight(pos, color, at, width, height);
 
+		  if (decomposeLights > 1) {
+			  vector<Light*> lights = light->decompose(decomposeLights);
+			  for (Light* pointLight : lights) {
+				  this->addLight(pointLight);
+			  }
+		  }
+		  else {
+			  this->addLight(light);
+		  }
 	  }
       else if (cmd == "v")
       {

@@ -195,10 +195,19 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Dependencies.exe" />
+    <None Include="P3D_Scenes\balls_area_low.p3f" />
     <None Include="P3D_Scenes\balls_box.p3f" />
+    <None Include="P3D_Scenes\balls_fuzzy_low.p3f" />
     <None Include="P3D_Scenes\balls_high.p3f" />
     <None Include="P3D_Scenes\balls_low.p3f" />
+    <None Include="P3D_Scenes\balls_low_trans.p3f" />
     <None Include="P3D_Scenes\balls_medium.p3f" />
+    <None Include="P3D_Scenes\dof.p3f" />
+    <None Include="P3D_Scenes\mount_high.p3f" />
+    <None Include="P3D_Scenes\mount_low.p3f" />
+    <None Include="P3D_Scenes\mount_very_high.p3f" />
+    <None Include="P3D_Scenes\primary_ray_test.p3f" />
+    <None Include="P3D_Scenes\README.md" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="skybox\back.jpg" />

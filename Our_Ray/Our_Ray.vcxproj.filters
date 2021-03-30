@@ -74,6 +74,31 @@
     <None Include="P3D_Scenes\balls_medium.p3f">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="P3D_Scenes\README.md" />
+    <None Include="P3D_Scenes\balls_area_low.p3f">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="P3D_Scenes\balls_low_trans.p3f">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="P3D_Scenes\dof.p3f">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="P3D_Scenes\mount_high.p3f">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="P3D_Scenes\mount_low.p3f">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="P3D_Scenes\mount_very_high.p3f">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="P3D_Scenes\primary_ray_test.p3f">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="P3D_Scenes\balls_fuzzy_low.p3f">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="skybox\back.jpg">
