@@ -12,6 +12,10 @@ float Vector::length()
 	return sqrt( x * x + y * y + z * z );
 }
 
+float Vector::getAxisValue(int axis) {
+	return (axis == 0) ? x : (axis == 1) ? y : z;
+}
+
 // --------------------------------------------------------------------- copy constructor
 Vector::Vector(const Vector& v)
 {

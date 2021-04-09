@@ -85,10 +85,7 @@ public:
 		float v_s = b + (t - b) * (pixel_sample.y/this->GetResY());
 		float n_s = -(eye - at).length();
 
-		Vector s; // transform s from uvw to xyz
-		s.x = eye.x + u_s * u.x + v_s * v.x + n_s * n.x;
-		s.y = eye.y + u_s * u.y + v_s * v.y + n_s * n.y;
-		s.z = eye.z + u_s * u.z + v_s * v.z + n_s * n.z;
+		Vector s = transforUVWToXYZ(Vector(u_s, v_s, n_s));
 
 		ray_dir = s - eye;
 		ray_dir.normalize();
@@ -98,11 +95,38 @@ public:
 
 	Ray PrimaryRay(const Vector& lens_sample, const Vector& pixel_sample) // DOF: Rays cast from  a thin lens sample to a pixel sample
 	{
-		
-		Vector ray_dir;
-		Vector eye_offset;
+		Vector rayDir;
+		Vector eyeOffset;
+		Vector pixel = getPixelCoordinates(pixel_sample);
 
-		return Ray(eye_offset, ray_dir);
+		float focalDistance = aperture * focal_ratio;
+		Vector p = Vector(pixel.x * (focalDistance / plane_dist), pixel.y * (focalDistance / plane_dist), -focalDistance);
+
+		Vector lens = lens_sample;
+		eyeOffset = transforUVWToXYZ(lens*aperture);
+		rayDir = (transforUVWToXYZ(p) - eyeOffset).normalize();
+		return Ray(eyeOffset, rayDir);
+	}
+
+	Vector getPixelCoordinates(const Vector& pixelSample) {
+		float r = w / 2;
+		float t = h / 2;
+		float l = -w / 2;
+		float b = -h / 2;
+
+		float u_s = l + (r - l) * (pixelSample.x / GetResX());
+		float v_s = b + (t - b) * (pixelSample.y / GetResY());
+		float n_s = -(eye - at).length();
+
+		return Vector(u_s, v_s, n_s);
+	}
+
+	Vector transforUVWToXYZ(Vector uvw) {
+		Vector s; // transform s from uvw to xyz
+		s.x = eye.x + uvw.x * u.x + uvw.y * v.x + uvw.z * n.x;
+		s.y = eye.y + uvw.x * u.y + uvw.y * v.y + uvw.z * n.y;
+		s.z = eye.z + uvw.x * u.z + uvw.y * v.z + uvw.z * n.z;
+		return s;
 	}
 
 };

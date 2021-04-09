@@ -32,12 +32,23 @@
 
 #define MAX_DEPTH 5
 
-#define N 4 // super-sampling: 1 - disabled, >1 - enabled
+#define ANTI_ALIASING 1
+
+#if ANTI_ALIASING
+#define N 3 // super-sampling: 1 - disabled, >1 - enabled
 #define N2 N*N // n * n
 
 #define N_LIGHT_DECOMPOSE 1
 
-bool jittering = true;
+bool jittering = false;
+#else
+#define N 1 // super-sampling: 1 - disabled, >1 - enabled
+#define N2 N*N // n * n
+
+#define N_LIGHT_DECOMPOSE 3
+
+bool jittering = false;
+#endif // ANTI_ALIASING
 
 unsigned int FrameCount = 0;
 
@@ -404,7 +415,7 @@ void renderScene()
 					pixel.x = x + (p + offSetX) / N;
 					pixel.y = y + (q + offSetY) / N;
 
-					Ray ray = scene->GetCamera()->PrimaryRay(pixel);
+					Ray ray = scene->GetCamera()->PrimaryRay(sample_unit_disk(), pixel);
 					color += rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / (N2);
 				}
 			}
