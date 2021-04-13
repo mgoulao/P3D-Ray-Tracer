@@ -7,6 +7,9 @@
 #include "maths.h"
 #include "scene.h"
 #include "sampler.h"
+#include "rayAccelerator.h"
+
+Grid grid;
 
 Vector Light::sampleLight(Vector passSample) {
 	return position;
@@ -770,4 +773,18 @@ void Scene::create_random_scene() {
 	sphere = new Sphere(Vector(4.0, 1.0, 0.0), 1.0);
 	if (material) sphere->SetMaterial(material);
 	this->addObject((Object*)sphere);
+}
+
+void Scene::buildGrid() {
+	grid = Grid();
+	grid.Build(objects);
+	printf("Grid built.\n\n");
+}
+
+bool Scene::traverseGrid(Ray& ray, Object** object, Vector& hitpoint) {
+	return grid.Traverse(ray, object, hitpoint);
+}
+
+bool Scene::traverseShadowGrid(Ray& ray) {
+	return grid.Traverse(ray);
 }

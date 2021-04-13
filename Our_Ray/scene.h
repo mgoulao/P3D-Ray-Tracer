@@ -216,6 +216,9 @@ public:
 
 	bool load_p3f(const char *name);  //Load NFF file method
 	void create_random_scene();
+	void buildGrid();
+	bool traverseGrid(Ray& ray, Object **object, Vector& hitpoint);
+	bool traverseShadowGrid(Ray& ray);
 	
 private:
 	vector<Object *> objects;

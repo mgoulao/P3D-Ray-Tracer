@@ -1,5 +1,6 @@
 #include "rayAccelerator.h"
 #include "macros.h"
+#include "maths.h"
 
 
 Grid::Grid(void) {}
@@ -73,7 +74,7 @@ void Grid::Build(vector<Object*>& objs) {
 		cells.push_back(obj_cell);   //each cell has an array with zero elements
 		
 	// insert the objects into the cells
-	for (auto &obj : objects) {   //vector iterator
+	for (Object* obj : objects) {   //vector iterator
 
 		AABB obb = obj->GetBoundingBox();
 

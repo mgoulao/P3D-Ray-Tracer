@@ -21,7 +21,6 @@
 #include <IL/il.h>
 
 #include "scene.h"
-#include "grid.h"
 #include "maths.h"
 #include "sampler.h"
 
@@ -49,6 +48,8 @@ bool jittering = false;
 
 bool jittering = false;
 #endif // ANTI_ALIASING
+
+#define USE_GRID 1
 
 unsigned int FrameCount = 0;
 
@@ -117,12 +118,18 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass
 		Ray shadowRay = Ray(p_, (currentLightPosition - p_).normalize());
 
 		bool intercepts = false;
-		for (int j = 0; j < scene->getNumObjects(); j++) {
-			float t = 0;
-			Object* currentObject = scene->getObject(j);
-			if (currentObject->intercepts(shadowRay, t)) {
-				intercepts = true;
-				break;
+		if (USE_GRID) {
+			intercepts = scene->traverseShadowGrid(ray);
+		}
+		else {
+
+			for (int j = 0; j < scene->getNumObjects(); j++) {
+				float t = 0;
+				Object* currentObject = scene->getObject(j);
+				if (currentObject->intercepts(shadowRay, t)) {
+					intercepts = true;
+					break;
+				}
 			}
 		}
 
@@ -171,23 +178,36 @@ Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index o
 
 	if (depth == MAX_DEPTH) return Color(0,0,0);
 
-	for (int i = 0; i < scene->getNumObjects(); i++) {
-		float t = 0;
-		Object* currentObject = scene->getObject(i);
-		bool intercepts = currentObject->intercepts(ray, t);
-		if (intercepts && t < closestT) {
-			closestT = t;
-			closestObject = currentObject;
-		}
-	}
-
-	if (closestT == FLT_MAX) {
-		return scene->GetBackgroundColor();
-	}
-	
+	Vector hitpoint = Vector(0, 0, 0);
 	HitRecord hitRecord;
+
+	if (USE_GRID) {
+		if(!scene->traverseGrid(ray, &closestObject, hitpoint))
+			return scene->GetBackgroundColor();
+
+		hitRecord.p = hitpoint;
+	}
+	else {
+
+		for (int i = 0; i < scene->getNumObjects(); i++) {
+			float t = 0;
+			Object* currentObject = scene->getObject(i);
+			bool intercepts = currentObject->intercepts(ray, t);
+			if (intercepts && t < closestT) {
+				closestT = t;
+				closestObject = currentObject;
+			}
+		}
+
+		if (closestT == FLT_MAX) {
+			return scene->GetBackgroundColor();
+		}
+
+		hitRecord.p = ray.origin + ray.direction * closestT;
+	}
 	
-	hitRecord.p = ray.origin + ray.direction * closestT;
+	
+	
 	hitRecord.n = closestObject->getNormal(hitRecord.p);
 	hitRecord.object = closestObject;
 	hitRecord.frontFace = (ray.direction * hitRecord.n) < 0;
@@ -415,7 +435,7 @@ void renderScene()
 					pixel.x = x + (p + offSetX) / N;
 					pixel.y = y + (q + offSetY) / N;
 
-					Ray ray = scene->GetCamera()->PrimaryRay(sample_unit_disk(), pixel);
+					Ray ray = scene->GetCamera()->PrimaryRay(pixel);
 					color += rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / (N2);
 				}
 			}
@@ -696,6 +716,9 @@ void init_scene(void)
 	else {
 		printf("Creating a Random Scene.\n\n");
 		scene->create_random_scene();
+	}
+	if (USE_GRID) {
+		scene->buildGrid();
 	}
 	RES_X = scene->GetCamera()->GetResX();
 	RES_Y = scene->GetCamera()->GetResY();
