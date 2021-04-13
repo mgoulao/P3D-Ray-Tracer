@@ -9,7 +9,7 @@
 #include "sampler.h"
 #include "rayAccelerator.h"
 
-Grid grid;
+Grid* grid;
 
 Vector Light::sampleLight(Vector passSample) {
 	return position;
@@ -44,8 +44,14 @@ Triangle::Triangle(Vector& P0, Vector& P1, Vector& P2)
 	normal.normalize();
 
 	//Calculate the Min and Max for bounding box
-	Min = Vector(+FLT_MAX, +FLT_MAX, +FLT_MAX);
-	Max = Vector(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	float minX = min(P0.x, min(P1.x, P2.x));
+	float minY = min(P0.y, min(P1.y, P2.y));
+	float minZ = min(P0.z, min(P1.z, P2.z));
+	float maxX = max(P0.x, max(P1.x, P2.x));
+	float maxY = max(P0.y, max(P1.y, P2.y));
+	float maxZ = max(P0.z, max(P1.z, P2.z));
+	Min = Vector(minX, minY, minZ);
+	Max = Vector(maxX, maxY, maxZ);
 
 
 	// enlarge the bounding box a bit just in case...
@@ -174,8 +180,8 @@ Vector Sphere::getNormal( Vector point )
 }
 
 AABB Sphere::GetBoundingBox() {
-	Vector a_min;
-	Vector a_max ;
+	Vector a_min = Vector(center.x-radius, center.y- radius, center.z - radius);
+	Vector a_max = Vector(center.x + radius, center.y + radius, center.z + radius);
 	return(AABB(a_min, a_max));
 }
 
@@ -776,15 +782,21 @@ void Scene::create_random_scene() {
 }
 
 void Scene::buildGrid() {
-	grid = Grid();
-	grid.Build(objects);
+	grid = new Grid();
+	vector<Object*> objs;
+	int num_objects = getNumObjects();
+	for (int o = 0; o < num_objects; o++) {
+		objs.push_back(getObject(o));
+	}
+
+	grid->Build(objs);
 	printf("Grid built.\n\n");
 }
 
 bool Scene::traverseGrid(Ray& ray, Object** object, Vector& hitpoint) {
-	return grid.Traverse(ray, object, hitpoint);
+	return grid->Traverse(ray, object, hitpoint);
 }
 
 bool Scene::traverseShadowGrid(Ray& ray) {
-	return grid.Traverse(ray);
+	return grid->Traverse(ray);
 }

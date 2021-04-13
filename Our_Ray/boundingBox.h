@@ -1,3 +1,5 @@
+#ifndef AABB_H
+#define AABB_H
 
 #include "vector.h"
 #include "ray.h"
@@ -19,3 +21,5 @@ public:
 	void extend(AABB box);
 
 };
+
+#endif

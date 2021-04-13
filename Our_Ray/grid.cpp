@@ -44,7 +44,6 @@ void Grid::Build(vector<Object*>& objs) {
 	for (Object* obj : objs) {
 		AABB o_bbox = obj->GetBoundingBox();
 		grid_bbox.extend(o_bbox);
-		this->addObject(obj);
 		objects.push_back(obj);  
 	}
 	//slightly enlarge the grid box just for case

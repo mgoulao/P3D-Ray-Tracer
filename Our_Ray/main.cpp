@@ -49,7 +49,9 @@ bool jittering = false;
 bool jittering = false;
 #endif // ANTI_ALIASING
 
-#define USE_GRID 1
+typedef enum { NONE, GRID_ACC, BVH_ACC } Accelerator;
+
+Accelerator ACCELERATION_TYPE = GRID_ACC;
 
 unsigned int FrameCount = 0;
 
@@ -118,8 +120,8 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass
 		Ray shadowRay = Ray(p_, (currentLightPosition - p_).normalize());
 
 		bool intercepts = false;
-		if (USE_GRID) {
-			intercepts = scene->traverseShadowGrid(ray);
+		if (ACCELERATION_TYPE != NONE) {
+			intercepts = scene->traverseShadowGrid(shadowRay);
 		}
 		else {
 
@@ -181,7 +183,7 @@ Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index o
 	Vector hitpoint = Vector(0, 0, 0);
 	HitRecord hitRecord;
 
-	if (USE_GRID) {
+	if (ACCELERATION_TYPE == GRID_ACC) {
 		if(!scene->traverseGrid(ray, &closestObject, hitpoint))
 			return scene->GetBackgroundColor();
 
@@ -435,7 +437,7 @@ void renderScene()
 					pixel.x = x + (p + offSetX) / N;
 					pixel.y = y + (q + offSetY) / N;
 
-					Ray ray = scene->GetCamera()->PrimaryRay(pixel);
+					Ray ray = scene->GetCamera()->PrimaryRay(sample_unit_disk(), pixel);
 					color += rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / (N2);
 				}
 			}
@@ -717,9 +719,7 @@ void init_scene(void)
 		printf("Creating a Random Scene.\n\n");
 		scene->create_random_scene();
 	}
-	if (USE_GRID) {
-		scene->buildGrid();
-	}
+	
 	RES_X = scene->GetCamera()->GetResX();
 	RES_Y = scene->GetCamera()->GetResY();
 	printf("\nResolutionX = %d  ResolutionY= %d.\n", RES_X, RES_Y);
@@ -727,7 +727,12 @@ void init_scene(void)
 	// Pixel buffer to be used in the Save Image function
 	img_Data = (uint8_t*)malloc(3 * RES_X*RES_Y * sizeof(uint8_t));
 	if (img_Data == NULL) exit(1);
+
+	if (ACCELERATION_TYPE == GRID_ACC) {
+		scene->buildGrid();
+	}
 }
+
 
 int main(int argc, char* argv[])
 {

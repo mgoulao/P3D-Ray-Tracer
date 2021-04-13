@@ -1,6 +1,3 @@
-#ifndef AABB_H
-#define AABB_H
-
 #include "boundingBox.h"
 #include "macros.h"
 
@@ -122,4 +119,3 @@ bool AABB::intercepts(const Ray& ray, float& t)
 
 	return (t0 < t1 && t1 > 0);
 }
-#endif

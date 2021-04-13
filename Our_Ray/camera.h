@@ -99,7 +99,7 @@ public:
 		Vector eyeOffset;
 		Vector pixel = getPixelCoordinates(pixel_sample);
 
-		float focalDistance = aperture * focal_ratio;
+		float focalDistance = plane_dist * focal_ratio;
 		Vector p = Vector(pixel.x * (focalDistance / plane_dist), pixel.y * (focalDistance / plane_dist), -focalDistance);
 
 		Vector lens = lens_sample;
