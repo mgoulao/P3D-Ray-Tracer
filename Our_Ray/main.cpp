@@ -49,8 +49,6 @@ bool jittering = false;
 bool jittering = false;
 #endif // ANTI_ALIASING
 
-typedef enum { NONE, GRID_ACC, BVH_ACC } Accelerator;
-
 Accelerator ACCELERATION_TYPE = GRID_ACC;
 
 unsigned int FrameCount = 0;
@@ -120,11 +118,10 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass
 		Ray shadowRay = Ray(p_, (currentLightPosition - p_).normalize());
 
 		bool intercepts = false;
-		if (ACCELERATION_TYPE != NONE) {
-			intercepts = scene->traverseShadowGrid(shadowRay);
+		if (scene->getAcceleration() != NONE) {
+			intercepts = scene->traverseSceneShadow(shadowRay);
 		}
 		else {
-
 			for (int j = 0; j < scene->getNumObjects(); j++) {
 				float t = 0;
 				Object* currentObject = scene->getObject(j);
@@ -184,7 +181,7 @@ Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index o
 	HitRecord hitRecord;
 
 	if (ACCELERATION_TYPE == GRID_ACC) {
-		if(!scene->traverseGrid(ray, &closestObject, hitpoint))
+		if(!scene->traverseScene(ray, &closestObject, hitpoint))
 			return scene->GetBackgroundColor();
 
 		hitRecord.p = hitpoint;
@@ -695,7 +692,7 @@ void init_scene(void)
 	char input_user[50];
 	char scene_name[70];
 
-	scene = new Scene(N_LIGHT_DECOMPOSE);
+	scene = new Scene(ACCELERATION_TYPE, N_LIGHT_DECOMPOSE);
 
 	if (P3F_scene) {  //Loading a P3F scene
 
@@ -727,10 +724,7 @@ void init_scene(void)
 	// Pixel buffer to be used in the Save Image function
 	img_Data = (uint8_t*)malloc(3 * RES_X*RES_Y * sizeof(uint8_t));
 	if (img_Data == NULL) exit(1);
-
-	if (ACCELERATION_TYPE == GRID_ACC) {
-		scene->buildGrid();
-	}
+	scene->build();
 }
 
 

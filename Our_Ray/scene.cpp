@@ -9,8 +9,6 @@
 #include "sampler.h"
 #include "rayAccelerator.h"
 
-Grid* grid;
-
 Vector Light::sampleLight(Vector passSample) {
 	return position;
 }
@@ -308,7 +306,8 @@ float Physics::reflectivity(HitRecord hit, Vector& d, Vector& t, float eta_i, fl
 	return r_0 + (1 - r_0) * pow(1 - cosTheta, 5);
 }
 
-Scene::Scene(int decomposeLights_){
+Scene::Scene(Accelerator accelerator, int decomposeLights_){
+	accelerator = accelerator;
 	decomposeLights = decomposeLights_;
 }
 
@@ -360,6 +359,11 @@ Light* Scene::getLight(unsigned int index)
 		return lights[index];
 	return NULL;
 }
+
+Accelerator Scene::getAcceleration() {
+	return accelerator;
+}
+
 
 void Scene::LoadSkybox(const char *sky_dir)
 {
@@ -781,16 +785,36 @@ void Scene::create_random_scene() {
 	this->addObject((Object*)sphere);
 }
 
-void Scene::buildGrid() {
-	grid = new Grid();
+void Scene::build() {
 	vector<Object*> objs;
 	int num_objects = getNumObjects();
 	for (int o = 0; o < num_objects; o++) {
 		objs.push_back(getObject(o));
 	}
 
-	grid->Build(objs);
-	printf("Grid built.\n\n");
+	if (accelerator == GRID_ACC) {
+		grid = new Grid();
+		grid->Build(objs);
+	}
+	else if (accelerator == BVH_ACC) {
+		bvh = new BVH();
+		bvh->Build(objs);
+	}
+	printf("Scene built.\n\n");
+}
+
+bool Scene::traverseScene(Ray& ray, Object** object, Vector& hitpoint) {
+	if (accelerator == GRID_ACC) {
+		return grid->Traverse(ray, object, hitpoint);
+	}
+	else if (accelerator == BVH_ACC) {
+		return bvh->Traverse(ray, object, hitpoint);
+	}
+	return false;
+}
+
+bool Scene::traverseSceneShadow(Ray& ray) {
+	return grid->Traverse(ray);
 }
 
 bool Scene::traverseGrid(Ray& ray, Object** object, Vector& hitpoint) {

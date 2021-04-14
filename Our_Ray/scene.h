@@ -24,6 +24,7 @@ using namespace std;
 //Skybox images constant symbolics
 typedef enum { RIGHT, LEFT, TOP, BOTTOM, FRONT, BACK } CubeMap;
 
+typedef enum { NONE, GRID_ACC, BVH_ACC } Accelerator;
 
 #define EPSILON			0.0001f
 
@@ -193,7 +194,7 @@ public:
 class Scene
 {
 public:
-	Scene(int decomposeLights);
+	Scene(Accelerator accelerator, int decomposeLights);
 	virtual ~Scene();
 	
 	Camera* GetCamera() { return camera; }
@@ -214,11 +215,15 @@ public:
 	void addLight( Light* l );
 	Light* getLight( unsigned int index );
 
+	Accelerator getAcceleration();
+
 	bool load_p3f(const char *name);  //Load NFF file method
 	void create_random_scene();
-	void buildGrid();
+	bool traverseScene(Ray& ray, Object** object, Vector& hitpoint);
+	bool traverseSceneShadow(Ray& ray);
 	bool traverseGrid(Ray& ray, Object **object, Vector& hitpoint);
 	bool traverseShadowGrid(Ray& ray);
+	void build();
 	
 private:
 	vector<Object *> objects;
@@ -229,6 +234,9 @@ private:
 
 	bool SkyBoxFlg = false;
 	int decomposeLights = 1;
+	Accelerator accelerator = NONE;
+	Grid* grid;
+	BVH* bvh;
 
 	struct {
 		ILubyte *img;

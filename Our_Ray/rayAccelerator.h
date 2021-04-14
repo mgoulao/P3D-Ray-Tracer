@@ -69,7 +69,7 @@ class BVH
 	};
 
 private:
-	int Threshold = 2;
+	int threshold = 2;
 	vector<Object*> objects;
 	vector<BVH::BVHNode*> nodes;
 
@@ -80,6 +80,8 @@ private:
 	};
 
 	stack<StackItem> hit_stack;
+
+	int getLargestAxis(int* midPoint);
 
 public:
 	BVH(void);
