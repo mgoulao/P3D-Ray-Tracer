@@ -814,7 +814,13 @@ bool Scene::traverseScene(Ray& ray, Object** object, Vector& hitpoint) {
 }
 
 bool Scene::traverseSceneShadow(Ray& ray) {
-	return grid->Traverse(ray);
+	if (accelerator == GRID_ACC) {
+		return grid->Traverse(ray);
+	}
+	else if (accelerator == BVH_ACC) {
+		return bvh->Traverse(ray);
+	}
+	return false;
 }
 
 bool Scene::traverseGrid(Ray& ray, Object** object, Vector& hitpoint) {

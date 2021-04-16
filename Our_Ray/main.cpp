@@ -15,6 +15,7 @@
 #include <time.h>
 #include <chrono>
 #include <conio.h>
+#include <chrono>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -34,7 +35,7 @@
 #define ANTI_ALIASING 1
 
 #if ANTI_ALIASING
-#define N 3 // super-sampling: 1 - disabled, >1 - enabled
+#define N 1 // super-sampling: 1 - disabled, >1 - enabled
 #define N2 N*N // n * n
 
 #define N_LIGHT_DECOMPOSE 1
@@ -49,7 +50,7 @@ bool jittering = false;
 bool jittering = false;
 #endif // ANTI_ALIASING
 
-Accelerator ACCELERATION_TYPE = BVH_ACC;
+Accelerator ACCELERATION_TYPE = NONE;
 
 unsigned int FrameCount = 0;
 
@@ -181,11 +182,19 @@ Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index o
 	HitRecord hitRecord;
 
 	if (scene->getAcceleration() != NONE) {
-		if(!scene->traverseScene(ray, &closestObject, hitpoint))
+		/*std::chrono::nanoseconds time1, time2;
+		time1 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());*/
+		bool a = scene->traverseScene(ray, &closestObject, hitpoint);
+		/*time2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
+		printf("t: %lld \n", time2.count() - time1.count());
+		fflush(stdout);*/
+		if(!a)
 			return scene->GetBackgroundColor();
 		hitRecord.p = hitpoint;
 	}
 	else {
+		/*std::chrono::nanoseconds time1, time2;
+		time1 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());*/
 		for (int i = 0; i < scene->getNumObjects(); i++) {
 			float t = 0;
 			Object* currentObject = scene->getObject(i);
@@ -201,6 +210,8 @@ Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index o
 		}
 
 		hitRecord.p = ray.origin + ray.direction * closestT;
+		/*time2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
+		printf("t: %lld \n", time2.count() - time1.count());*/
 	}
 	
 	hitRecord.n = closestObject->getNormal(hitRecord.p);
@@ -413,6 +424,7 @@ void renderScene()
 	{
 		for (int x = 0; x < RES_X; x++)
 		{
+			//printf("%d, %d - %d \n", x, y, RES_Y);
 			Color color = Color(0,0,0); 
 			Vector pixel;  //viewport coordinates
 

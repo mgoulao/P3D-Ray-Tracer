@@ -56,7 +56,7 @@ class BVH
 		unsigned int index;	// if leaf == false: index to left child node,
 							// else if leaf == true: index to first Intersectable (Object *) in objects vector
 		int _getNodeIndex(int n) {
-			if (leaf) {
+			if (!leaf) {
 				return index + n;
 			}
 			return 0;
@@ -76,7 +76,7 @@ class BVH
 	};
 
 private:
-	int threshold = 2;
+	int threshold = 10;
 	vector<Object*> objects;
 	vector<BVH::BVHNode*> nodes;
 
@@ -89,6 +89,7 @@ private:
 	stack<StackItem> hit_stack;
 
 	int getLargestAxis(int* midPoint);
+	void setNodeAABB(BVHNode* node, int left_index, int right_index);
 
 public:
 	BVH(void);
