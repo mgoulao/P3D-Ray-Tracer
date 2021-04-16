@@ -306,8 +306,8 @@ float Physics::reflectivity(HitRecord hit, Vector& d, Vector& t, float eta_i, fl
 	return r_0 + (1 - r_0) * pow(1 - cosTheta, 5);
 }
 
-Scene::Scene(Accelerator accelerator, int decomposeLights_){
-	accelerator = accelerator;
+Scene::Scene(Accelerator accelerator_, int decomposeLights_){
+	accelerator = accelerator_;
 	decomposeLights = decomposeLights_;
 }
 

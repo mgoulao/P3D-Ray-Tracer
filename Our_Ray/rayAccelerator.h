@@ -4,9 +4,12 @@
 #include <stack>
 #include <queue>
 #include <cmath>
+
 #include "scene.h"
 
 using namespace std;
+
+class Object; // Forward declaration
 
 class Grid
 {
@@ -42,11 +45,7 @@ class BVH
 	public:
 		int dimension;
 
-		bool operator() (Object* a, Object* b) {
-			float ca = a->GetBoundingBox().centroid().getAxisValue(dimension);
-			float cb = b->GetBoundingBox().centroid().getAxisValue(dimension);
-			return ca < cb;
-		}
+		bool operator() (Object* a, Object* b);
 	};
 
 	class BVHNode {
@@ -56,6 +55,12 @@ class BVH
 		unsigned int n_objs;
 		unsigned int index;	// if leaf == false: index to left child node,
 							// else if leaf == true: index to first Intersectable (Object *) in objects vector
+		int _getNodeIndex(int n) {
+			if (leaf) {
+				return index + n;
+			}
+			return 0;
+		};
 
 	public:
 		BVHNode(void);
@@ -66,6 +71,8 @@ class BVH
 		unsigned int getIndex() { return index; }
 		unsigned int getNObjs() { return n_objs; }
 		AABB& getAABB() { return bbox; };
+		int getLeftNodeIndex() { return _getNodeIndex(0); };
+		int getRightNodeIndex() { return _getNodeIndex(1); };
 	};
 
 private:

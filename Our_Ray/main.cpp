@@ -49,7 +49,7 @@ bool jittering = false;
 bool jittering = false;
 #endif // ANTI_ALIASING
 
-Accelerator ACCELERATION_TYPE = GRID_ACC;
+Accelerator ACCELERATION_TYPE = BVH_ACC;
 
 unsigned int FrameCount = 0;
 
@@ -180,14 +180,12 @@ Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index o
 	Vector hitpoint = Vector(0, 0, 0);
 	HitRecord hitRecord;
 
-	if (ACCELERATION_TYPE == GRID_ACC) {
+	if (scene->getAcceleration() != NONE) {
 		if(!scene->traverseScene(ray, &closestObject, hitpoint))
 			return scene->GetBackgroundColor();
-
 		hitRecord.p = hitpoint;
 	}
 	else {
-
 		for (int i = 0; i < scene->getNumObjects(); i++) {
 			float t = 0;
 			Object* currentObject = scene->getObject(i);
@@ -204,8 +202,6 @@ Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index o
 
 		hitRecord.p = ray.origin + ray.direction * closestT;
 	}
-	
-	
 	
 	hitRecord.n = closestObject->getNormal(hitRecord.p);
 	hitRecord.object = closestObject;
@@ -721,10 +717,11 @@ void init_scene(void)
 	RES_Y = scene->GetCamera()->GetResY();
 	printf("\nResolutionX = %d  ResolutionY= %d.\n", RES_X, RES_Y);
 
+	scene->build();
+
 	// Pixel buffer to be used in the Save Image function
 	img_Data = (uint8_t*)malloc(3 * RES_X*RES_Y * sizeof(uint8_t));
 	if (img_Data == NULL) exit(1);
-	scene->build();
 }
 
 

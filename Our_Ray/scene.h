@@ -11,6 +11,7 @@ using namespace std;
 #include "vector.h"
 #include "ray.h"
 #include "boundingBox.h"
+#include "rayAccelerator.h"
 
 #define MIN(a, b)		( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define MAX(a, b)		( ( a ) > ( b ) ? ( a ) : ( b ) )
@@ -21,12 +22,15 @@ using namespace std;
 ? ( ( a ) > ( c ) ? ( a ) : ( c ) ) \
 : ( ( b ) > ( c ) ? ( b ) : ( c ) ) )
 
+#define EPSILON			0.0001f
+
 //Skybox images constant symbolics
 typedef enum { RIGHT, LEFT, TOP, BOTTOM, FRONT, BACK } CubeMap;
 
 typedef enum { NONE, GRID_ACC, BVH_ACC } Accelerator;
 
-#define EPSILON			0.0001f
+class Grid;
+class BVH;
 
 class Material
 {
@@ -232,11 +236,12 @@ private:
 	Camera* camera;
 	Color bgColor;  //Background color
 
+	Grid* grid;
+	BVH* bvh;
+
 	bool SkyBoxFlg = false;
 	int decomposeLights = 1;
 	Accelerator accelerator = NONE;
-	Grid* grid;
-	BVH* bvh;
 
 	struct {
 		ILubyte *img;
