@@ -213,11 +213,8 @@ bool BVH::Traverse(Ray& ray, Object** hit_obj, Vector& hit_point) {
 
 bool BVH::Traverse(Ray& ray) {  //shadow ray with length
 	float tmp;
-
-	double length = ray.direction.length(); //distance between light and intersection point
+	float length = ray.direction.length(); //distance between light and intersection point
 	ray.direction.normalize();
-	float tmin = FLT_MAX;  //contains the closest primitive intersection
-	bool hit = false;
 
 	BVHNode* currentNode = nodes[0];
 
@@ -228,24 +225,20 @@ bool BVH::Traverse(Ray& ray) {  //shadow ray with length
 	bool euEstouFartoDaFaculdade = true;
 	bool NaoFazerNadaEQueEraGiro = true;
 	while (euEstouFartoDaFaculdade == NaoFazerNadaEQueEraGiro) {
-		BVHNode* closestNode = NULL;
 		if (!currentNode->isLeaf()) {
 			BVHNode* leftNode = nodes.at(currentNode->getLeftNodeIndex());
 			BVHNode* rightNode = nodes.at(currentNode->getRightNodeIndex());
-			float leftT = 0, rightT = 0;
-			bool leftHit = leftNode->getAABB().intercepts(ray, leftT);
-			bool rightHit = rightNode->getAABB().intercepts(ray, rightT);
+			bool leftHit = leftNode->getAABB().intercepts(ray, tmp);
+			bool rightHit = rightNode->getAABB().intercepts(ray, tmp);
 
 			if (leftHit && rightHit) { // hits both
-				closestNode = leftT <= rightT ? leftNode : rightNode;
-				BVHNode* farthestNode = leftT <= rightT ? rightNode : leftNode;
-				hit_stack.push(StackItem(farthestNode, 0));
-
-				currentNode = closestNode;
+				hit_stack.push(StackItem(rightNode, 0));
+				currentNode = leftNode;
+				continue;
 			}
 			else if (leftHit || rightHit) {
-				closestNode = leftHit ? leftNode : rightNode;
-				currentNode = closestNode;
+				currentNode = leftHit ? leftNode : rightNode;
+				continue;
 			}
 		}
 		else {
@@ -254,22 +247,20 @@ bool BVH::Traverse(Ray& ray) {  //shadow ray with length
 				float t = 0;
 				Object* obj = objects.at(firstObjectIndex + i);
 				bool objHit = obj->intercepts(ray, t);
-				if (objHit) {
+				if (objHit && t < length) {
 					return true;
 				}
 			}
 		}
 
-		if (closestNode == NULL) {
-			if (hit_stack.size()) {
-				StackItem stackItem = hit_stack.top();
-				currentNode = stackItem.ptr;
-				hit_stack.pop();
-			}
-			else {
-				break;
-			}
+		if (hit_stack.size()) {
+			StackItem stackItem = hit_stack.top();
+			currentNode = stackItem.ptr;
+			hit_stack.pop();
+		}
+		else {
+			break;
 		}
 	}
-	return hit;
+	return false;
 }		

@@ -525,7 +525,7 @@ bool Scene::load_p3f(const char *name)
       
 	  if (cmd == "f")   //Material
       {
-	    double Kd, Ks, Shine, T, ior, roughness;
+	    double Kd, Ks, Shine, T, ior, roughness = 0;
 	    Color cd, cs;
 		string s;
 		getline(file, s);

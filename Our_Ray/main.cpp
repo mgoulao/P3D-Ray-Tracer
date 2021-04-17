@@ -30,17 +30,17 @@
 #define VERTEX_COORD_ATTRIB 0
 #define COLOR_ATTRIB 1
 
-#define MAX_DEPTH 5
+#define MAX_DEPTH 4
 
 #define ANTI_ALIASING 1
 
 #if ANTI_ALIASING
-#define N 1 // super-sampling: 1 - disabled, >1 - enabled
+#define N 3 // super-sampling: 1 - disabled, >1 - enabled
 #define N2 N*N // n * n
 
 #define N_LIGHT_DECOMPOSE 1
 
-bool jittering = false;
+bool jittering = true;
 #else
 #define N 1 // super-sampling: 1 - disabled, >1 - enabled
 #define N2 N*N // n * n
@@ -50,7 +50,7 @@ bool jittering = false;
 bool jittering = false;
 #endif // ANTI_ALIASING
 
-Accelerator ACCELERATION_TYPE = NONE;
+Accelerator ACCELERATION_TYPE = Accelerator::NONE;
 
 unsigned int FrameCount = 0;
 
@@ -74,7 +74,7 @@ char s[32];
 //Enable OpenGL drawing.  
 bool drawModeEnabled = true;
 
-bool P3F_scene = true; //choose between P3F scene or a built-in random scene
+bool P3F_scene = false; //choose between P3F scene or a built-in random scene
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -119,18 +119,29 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass
 		Ray shadowRay = Ray(p_, (currentLightPosition - p_).normalize());
 
 		bool intercepts = false;
-		if (scene->getAcceleration() != NONE) {
+		if (scene->getAcceleration() != Accelerator::NONE) {
+			//std::chrono::nanoseconds time1, time2;
+			//time1 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
+
 			intercepts = scene->traverseSceneShadow(shadowRay);
+		/*	time2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
+			printf("%lld, ", time2.count() - time1.count());*/
 		}
 		else {
+			//std::chrono::nanoseconds time1, time2;
+			//time1 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
+
+			float length = ray.direction.length();
 			for (int j = 0; j < scene->getNumObjects(); j++) {
 				float t = 0;
 				Object* currentObject = scene->getObject(j);
-				if (currentObject->intercepts(shadowRay, t)) {
+				if (currentObject->intercepts(shadowRay, t) && t < length) {
 					intercepts = true;
 					break;
 				}
 			}
+			//time2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
+			//printf("%lld, ", time2.count() - time1.count());
 		}
 
 		if (!intercepts) {
@@ -181,13 +192,12 @@ Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index o
 	Vector hitpoint = Vector(0, 0, 0);
 	HitRecord hitRecord;
 
-	if (scene->getAcceleration() != NONE) {
+	if (scene->getAcceleration() != Accelerator::NONE) {
 		/*std::chrono::nanoseconds time1, time2;
 		time1 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());*/
 		bool a = scene->traverseScene(ray, &closestObject, hitpoint);
 		/*time2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
-		printf("t: %lld \n", time2.count() - time1.count());
-		fflush(stdout);*/
+		printf("%lld, ", time2.count() - time1.count());*/
 		if(!a)
 			return scene->GetBackgroundColor();
 		hitRecord.p = hitpoint;
@@ -211,7 +221,7 @@ Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index o
 
 		hitRecord.p = ray.origin + ray.direction * closestT;
 		/*time2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
-		printf("t: %lld \n", time2.count() - time1.count());*/
+		printf("%lld, ", time2.count() - time1.count());*/
 	}
 	
 	hitRecord.n = closestObject->getNormal(hitRecord.p);
@@ -419,12 +429,13 @@ void renderScene()
 		glClear(GL_COLOR_BUFFER_BIT);
 		scene->GetCamera()->SetEye(Vector(camX, camY, camZ));  //Camera motion
 	}
+	/*std::chrono::nanoseconds time1, time2;
+	time1 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());*/
 
 	for (int y = 0; y < RES_Y; y++)
 	{
 		for (int x = 0; x < RES_X; x++)
 		{
-			//printf("%d, %d - %d \n", x, y, RES_Y);
 			Color color = Color(0,0,0); 
 			Vector pixel;  //viewport coordinates
 
@@ -460,8 +471,9 @@ void renderScene()
 				colors[index_col++] = (float)color.b();
 			}
 		}
-	
 	}
+	/*time2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
+	printf("t: %lld \n", time2.count() - time1.count());*/
 	if(drawModeEnabled) {
 		drawPoints();
 		glutSwapBuffers();
