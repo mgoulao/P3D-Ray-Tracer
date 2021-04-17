@@ -27,8 +27,9 @@ using namespace std;
 //Skybox images constant symbolics
 typedef enum { RIGHT, LEFT, TOP, BOTTOM, FRONT, BACK } CubeMap;
 
-typedef enum { NONE, GRID_ACC, BVH_ACC } Accelerator;
+enum class Accelerator { NONE, GRID_ACC, BVH_ACC } ;
 
+class BaseAcceleration;
 class Grid;
 class BVH;
 
@@ -225,8 +226,6 @@ public:
 	void create_random_scene();
 	bool traverseScene(Ray& ray, Object** object, Vector& hitpoint);
 	bool traverseSceneShadow(Ray& ray);
-	bool traverseGrid(Ray& ray, Object **object, Vector& hitpoint);
-	bool traverseShadowGrid(Ray& ray);
 	void build();
 	
 private:
@@ -236,12 +235,11 @@ private:
 	Camera* camera;
 	Color bgColor;  //Background color
 
-	Grid* grid;
-	BVH* bvh;
+	BaseAcceleration* acc;
 
 	bool SkyBoxFlg = false;
 	int decomposeLights = 1;
-	Accelerator accelerator = NONE;
+	Accelerator accelerator = Accelerator::NONE;
 
 	struct {
 		ILubyte *img;

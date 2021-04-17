@@ -11,8 +11,22 @@ using namespace std;
 
 class Object; // Forward declaration
 
-class Grid
-{
+class BaseAcceleration {
+
+protected:
+	vector<Object*> objects;
+	int getNumObjects();
+	void addObject(Object* o);
+	Object* getObject(unsigned int index);
+
+public:
+	BaseAcceleration(void);
+	virtual void Build(vector<Object*>& objs);
+	virtual bool Traverse(Ray& ray, Object** hitobject, Vector& hitpoint);  //(const Ray& ray, double& tmin, ShadeRec& sr)
+	virtual bool Traverse(Ray& ray);  //Traverse for shadow ray
+};
+
+class Grid: public BaseAcceleration {
 public:
 	Grid(void);
 	//~Grid(void);
@@ -25,7 +39,6 @@ public:
 	bool Traverse(Ray& ray);  //Traverse for shadow ray
 
 private:
-	vector<Object *> objects;
 	vector<vector<Object*> > cells;
 
 	int nx, ny, nz; // number of cells in the x, y, and z directions
@@ -39,7 +52,7 @@ private:
 };
 
 /*********************************BVH*****************************************************************/
-class BVH
+class BVH: public BaseAcceleration
 {
 	class Comparator {
 	public:
@@ -76,8 +89,7 @@ class BVH
 	};
 
 private:
-	int threshold = 10;
-	vector<Object*> objects;
+	int threshold = 2;
 	vector<BVH::BVHNode*> nodes;
 
 	struct StackItem {
@@ -93,7 +105,6 @@ private:
 
 public:
 	BVH(void);
-	int getNumObjects();
 	
 	void Build(vector<Object*>& objects);
 	void build_recursive(int left_index, int right_index, BVHNode* node);

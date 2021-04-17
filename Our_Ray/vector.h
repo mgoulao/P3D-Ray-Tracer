@@ -28,7 +28,6 @@ public:
 	Vector&	operator-=	(const float v);
 	Vector&	operator*=	(const float v);
 	Vector&	operator+=	(const float v);
-
 	void print() { printf("%f, %f, %f \n", x, y, z); }
 
 	float x;

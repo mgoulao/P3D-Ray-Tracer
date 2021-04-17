@@ -30,8 +30,6 @@ void BVH::BVHNode::makeNode(unsigned int left_index_) {
 
 BVH::BVH(void) {}
 
-int BVH::getNumObjects() { return objects.size(); }
-
 int BVH::getLargestAxis(int* midPoint) {
 	int axis, minY = INT_MAX, maxY = -INT_MAX, minX = INT_MAX, maxX = -INT_MAX, 
 		minZ = INT_MAX, maxZ = -INT_MAX;
@@ -47,17 +45,16 @@ int BVH::getLargestAxis(int* midPoint) {
 	int dX = maxX - minX, dY = maxY - minY, dZ = maxZ - minZ;
 	axis = (dX > dY ? (dX > dZ ? 0 : 2) : (dY > dZ ? 1 : 2));
 	if (axis == 0) {
-		*midPoint = dX / 2;
+		*midPoint = minX + (dX / 2);
 	}
 	else if (axis == 1) {
-		*midPoint = dY / 2;
+		*midPoint = minY + (dY / 2);
 	}
 	else {
-		*midPoint = dZ / 2;
+		*midPoint = minZ + (dZ / 2);
 	}
 	return axis;
 }
-
 
 void BVH::Build(vector<Object *> &objs) {		
 	BVHNode *root = new BVHNode();
@@ -68,7 +65,7 @@ void BVH::Build(vector<Object *> &objs) {
 	for (Object* obj : objs) {
 		AABB bbox = obj->GetBoundingBox();
 		world_bbox.extend(bbox);
-		objects.push_back(obj);
+		addObject(obj);
 	}
 
 	world_bbox.min.x -= EPSILON; world_bbox.min.y -= EPSILON; world_bbox.min.z -= EPSILON;
@@ -101,11 +98,11 @@ void BVH::build_recursive(int left_index, int right_index, BVHNode *node) {
 		int largestAxis = getLargestAxis(&midPoint);
 		int i = left_index;
 		
-		cmp.dimension = 0;
+		cmp.dimension = largestAxis;
 		std::sort(objects.begin() + left_index, objects.begin() + right_index, cmp);
 		node->makeNode(nodes.size());
 
-		while (objects.at(i)->GetBoundingBox().centroid().getAxisValue(largestAxis) < midPoint && i < right_index) {
+		while (objects.at(i)->GetBoundingBox().centroid().getAxisValue(largestAxis) < midPoint && i < right_index-1) {
 			i++;
 		}
 		if (i == left_index || i == right_index) { // one of the nodes would be empty, use median instead
@@ -157,7 +154,7 @@ bool BVH::Traverse(Ray& ray, Object** hit_obj, Vector& hit_point) {
 			bool leftHit = leftNode->getAABB().intercepts(ray, leftT);
 			bool rightHit = rightNode->getAABB().intercepts(ray, rightT);
 
-			if (leftHit && rightHit) { // hits both
+			if (leftHit && rightHit) {
 				closestNode = leftT <= rightT ? leftNode : rightNode;
 				BVHNode* farthestNode = leftT <= rightT ? rightNode : leftNode;
 				float farthestT = MAX(leftT, rightT);

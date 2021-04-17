@@ -14,8 +14,6 @@ Vector Light::sampleLight(Vector passSample) {
 }
 
 Vector AreaLight::sampleLight(Vector passSample) {
-	P0;
-	P1;
 	return position + P0 * (passSample.x - 0.5) + P1 * (passSample.y - 0.5);
 }
 
@@ -282,12 +280,16 @@ Vector aaBox::getNormal(Vector point)
 Ray Physics::reflection(HitRecord hit, Vector& d) {
 	Vector n = hit.frontFace ? hit.n : -hit.n;
 	Vector r = d - n * (d * n) * 2;
-	return Ray(hit.p + n * 0.0001, (r + sample_unit_sphere() * hit.object->GetMaterial()->GetRoughness()).normalize());
+	float roughness = hit.object->GetMaterial()->GetRoughness();
+	if (roughness) {
+		return Ray(hit.p + n * EPSILON, (r + sample_unit_sphere() * roughness).normalize());
+	}
+	return Ray(hit.p + n * EPSILON, r);
 }
 
 Ray Physics::refraction(HitRecord hit, Vector& d, float eta_i, float eta_t, float* reflection) {
 	Vector n = hit.frontFace ? hit.n : -hit.n;
-	Vector p_ = hit.frontFace ? hit.p  - hit.n * 0.0001 : hit.p + hit.n * 0.0001;
+	Vector p_ = hit.frontFace ? hit.p  - hit.n * EPSILON : hit.p + hit.n * EPSILON;
 	float discriminator = 1 - ((1 - pow(d * n, 2)) * pow(eta_i, 2)) / pow(eta_t, 2);
 	if (discriminator < 0) {
 		*reflection = 1; // total reflection
@@ -319,6 +321,7 @@ Scene::~Scene()
 	}
 	objects.erase();
 	*/
+	delete(acc);
 }
 
 int Scene::getNumObjects()
@@ -792,41 +795,74 @@ void Scene::build() {
 		objs.push_back(getObject(o));
 	}
 
-	if (accelerator == GRID_ACC) {
-		grid = new Grid();
-		grid->Build(objs);
+	if (accelerator == Accelerator::GRID_ACC) {
+		acc = new Grid();
 	}
-	else if (accelerator == BVH_ACC) {
-		bvh = new BVH();
-		bvh->Build(objs);
+	else if (accelerator == Accelerator::BVH_ACC) {
+		acc = new BVH();
 	}
+	else {
+		acc = new BaseAcceleration();
+	}
+	acc->Build(objs);
 	printf("Scene built.\n\n");
 }
 
 bool Scene::traverseScene(Ray& ray, Object** object, Vector& hitpoint) {
-	if (accelerator == GRID_ACC) {
-		return grid->Traverse(ray, object, hitpoint);
-	}
-	else if (accelerator == BVH_ACC) {
-		return bvh->Traverse(ray, object, hitpoint);
-	}
-	return false;
+	return acc->Traverse(ray, object, hitpoint);
 }
 
 bool Scene::traverseSceneShadow(Ray& ray) {
-	if (accelerator == GRID_ACC) {
-		return grid->Traverse(ray);
+	return acc->Traverse(ray);
+}
+
+BaseAcceleration::BaseAcceleration(void) {}
+
+void BaseAcceleration::Build(vector<Object*>& objs) {
+	for (Object* obj : objs) {
+		addObject(obj);
 	}
-	else if (accelerator == BVH_ACC) {
-		return bvh->Traverse(ray);
+}
+
+int BaseAcceleration::getNumObjects() {
+	return objects.size();
+}
+
+Object* BaseAcceleration::getObject(unsigned int index) {
+	if (index >= 0 && index < objects.size())
+		return objects[index];
+	return NULL;
+}
+
+void BaseAcceleration::addObject(Object* o) {
+	objects.push_back(o);
+}
+
+bool BaseAcceleration::Traverse(Ray& ray, Object** hitobject, Vector& hitpoint) {
+	float closestT = FLT_MAX;
+	bool hit = false;
+	for (int i = 0; i < getNumObjects(); i++) {
+		float t = 0;
+		Object* currentObject = getObject(i);
+		bool intercepts = currentObject->intercepts(ray, t);
+		if (intercepts && t < closestT) {
+			closestT = t;
+			*hitobject = currentObject;
+			hitpoint = ray.origin + ray.direction * closestT;
+			hit = true;
+		}
+	}
+	return hit;
+}
+
+bool BaseAcceleration::Traverse(Ray& ray) {
+	float length = ray.direction.length();
+	for (int j = 0; j < getNumObjects(); j++) {
+		float t = 0;
+		Object* currentObject = getObject(j);
+		if (currentObject->intercepts(ray, t) && t < length) {
+			return true;
+		}
 	}
 	return false;
-}
-
-bool Scene::traverseGrid(Ray& ray, Object** object, Vector& hitpoint) {
-	return grid->Traverse(ray, object, hitpoint);
-}
-
-bool Scene::traverseShadowGrid(Ray& ray) {
-	return grid->Traverse(ray);
 }
