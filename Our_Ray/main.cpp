@@ -116,7 +116,7 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass
 		Light* currentLight = scene->getLight(i);
 		Vector currentLightPosition = currentLight->sampleLight(passSample);
 		Vector p_ = frontFace ? p + n * EPSILON : p - n * EPSILON;
-		Ray shadowRay = Ray(p_, (currentLightPosition - p_).normalize());
+		Ray shadowRay = Ray(p_, currentLightPosition - p_);
 
 		bool intercepts = false;
 		//std::chrono::nanoseconds time1, time2;

@@ -857,6 +857,7 @@ bool BaseAcceleration::Traverse(Ray& ray, Object** hitobject, Vector& hitpoint) 
 
 bool BaseAcceleration::Traverse(Ray& ray) {
 	float length = ray.direction.length();
+	ray.direction.normalize();
 	for (int j = 0; j < getNumObjects(); j++) {
 		float t = 0;
 		Object* currentObject = getObject(j);
