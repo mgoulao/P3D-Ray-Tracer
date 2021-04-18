@@ -31,11 +31,11 @@
 #define COLOR_ATTRIB 1
 
 #define MAX_DEPTH 4
-
 #define ANTI_ALIASING 1
+#define USE_SKYBOX 0
 
 #if ANTI_ALIASING
-#define N 3 // super-sampling: 1 - disabled, >1 - enabled
+#define N 1 // super-sampling: 1 - disabled, >1 - enabled
 #define N2 N*N // n * n
 
 #define N_LIGHT_DECOMPOSE 1
@@ -50,7 +50,7 @@ bool jittering = true;
 bool jittering = false;
 #endif // ANTI_ALIASING
 
-Accelerator ACCELERATION_TYPE = Accelerator::GRID_ACC;
+Accelerator ACCELERATION_TYPE = Accelerator::NONE;
 
 unsigned int FrameCount = 0;
 
@@ -115,7 +115,7 @@ Color rayColor(Ray ray, HitRecord hitRecord, int depth, float ior_1, Vector pass
 	for (int i = 0; i < scene->getNumLights(); i++) {
 		Light* currentLight = scene->getLight(i);
 		Vector currentLightPosition = currentLight->sampleLight(passSample);
-		Vector p_ = frontFace ? p + n * 0.0001 : p - n * 0.0001;
+		Vector p_ = frontFace ? p + n * EPSILON : p - n * EPSILON;
 		Ray shadowRay = Ray(p_, (currentLightPosition - p_).normalize());
 
 		bool intercepts = false;
@@ -180,8 +180,14 @@ Color rayTracing(Ray ray, int depth, float ior_1, Vector pass_sample)  //index o
 	bool hit = scene->traverseScene(ray, &closestObject, hitpoint);
 	/*time2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
 	printf("%lld, ", time2.count() - time1.count());*/
-	if(!hit)
-		return scene->GetBackgroundColor();
+	if (!hit) {
+		if (USE_SKYBOX) {
+			return scene->GetSkyboxColor(ray);
+		}
+		else {
+			return scene->GetBackgroundColor();
+		}
+	}
 	hitRecord.p = hitpoint;
 	hitRecord.n = closestObject->getNormal(hitRecord.p);
 	hitRecord.object = closestObject;
@@ -632,7 +638,7 @@ void setupGLUT(int argc, char* argv[])
 
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 	
-	glutInitWindowPosition(100, 250);
+	glutInitWindowPosition(100, 50);
 	glutInitWindowSize(RES_X, RES_Y);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
 	glDisable(GL_DEPTH_TEST);

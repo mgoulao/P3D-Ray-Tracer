@@ -30,10 +30,12 @@ void BVH::BVHNode::makeNode(unsigned int left_index_) {
 
 BVH::BVH(void) {}
 
-int BVH::getLargestAxis(int* midPoint) {
-	int axis, minY = INT_MAX, maxY = -INT_MAX, minX = INT_MAX, maxX = -INT_MAX, 
-		minZ = INT_MAX, maxZ = -INT_MAX;
-	for (auto& object : objects) {
+int BVH::getLargestAxis(int left_index, int right_index, float& midPoint) {
+	int axis;
+	float minY = FLT_MAX, maxY = -FLT_MAX, minX = FLT_MAX, maxX = -FLT_MAX,
+		minZ = FLT_MAX, maxZ = -FLT_MAX;
+	for (int i = left_index; i < right_index; i++) {
+		Object* object = getObject(i);
 		Vector centroid = object->GetBoundingBox().centroid();
 		minX = MIN(minX, centroid.x);
 		maxX = MAX(maxX, centroid.x);
@@ -42,16 +44,16 @@ int BVH::getLargestAxis(int* midPoint) {
 		minZ = MIN(minZ, centroid.z);
 		maxZ = MAX(maxZ, centroid.z);
 	}
-	int dX = maxX - minX, dY = maxY - minY, dZ = maxZ - minZ;
+	float dX = maxX - minX, dY = maxY - minY, dZ = maxZ - minZ;
 	axis = (dX > dY ? (dX > dZ ? 0 : 2) : (dY > dZ ? 1 : 2));
 	if (axis == 0) {
-		*midPoint = minX + (dX / 2);
+		midPoint = minX + (float) (dX / (float) 2);
 	}
 	else if (axis == 1) {
-		*midPoint = minY + (dY / 2);
+		midPoint = minY + (float) (dY / (float) 2);
 	}
 	else {
-		*midPoint = minZ + (dZ / 2);
+		midPoint = minZ + (float) (dZ / (float) 2);
 	}
 	return axis;
 }
@@ -94,21 +96,33 @@ void BVH::build_recursive(int left_index, int right_index, BVHNode *node) {
 
 	if (right_index - left_index > threshold) {
 		BVH::Comparator cmp;
-		int midPoint = 0, median = left_index + (right_index - left_index) / 2, midIndex = 0;
-		int largestAxis = getLargestAxis(&midPoint);
-		int i = left_index;
+		float midPoint = 0;
+		int median = left_index + (right_index - left_index) / 2, midIndex = 0;
+		int largestAxis = getLargestAxis(left_index, right_index, midPoint);
 		
 		cmp.dimension = largestAxis;
 		std::sort(objects.begin() + left_index, objects.begin() + right_index, cmp);
 		node->makeNode(nodes.size());
-
-		while (objects.at(i)->GetBoundingBox().centroid().getAxisValue(largestAxis) < midPoint && i < right_index-1) {
-			i++;
-		}
-		if (i == left_index || i == right_index) { // one of the nodes would be empty, use median instead
+		float a = objects.at(left_index)->GetBoundingBox().centroid().getAxisValue(largestAxis);
+		float b = objects.at(right_index - 1)->GetBoundingBox().centroid().getAxisValue(largestAxis);
+		if (objects.at(left_index)->GetBoundingBox().centroid().getAxisValue(largestAxis) > midPoint 
+			|| objects.at(right_index-1)->GetBoundingBox().centroid().getAxisValue(largestAxis) < midPoint) { // one of the nodes would be empty, use median instead
 			midIndex = median;
-		}
-		else {
+		} else {
+			int i = left_index, left = left_index, right = right_index;
+			while (right - left > 1) {
+				i = left + (right - left) / 2;
+				float value = objects.at(i)->GetBoundingBox().centroid().getAxisValue(largestAxis);
+				if (value > midPoint) {
+					right = i;
+				}
+				else {
+					left = i;
+				}
+			}
+			/*if (i == left_index || i == right_index) {
+				i = median;
+			}*/
 			midIndex = i;
 		}
 
@@ -144,15 +158,15 @@ bool BVH::Traverse(Ray& ray, Object** hit_obj, Vector& hit_point) {
 		if (!currentNode->isLeaf()) {
 			BVHNode* leftNode = nodes.at(currentNode->getLeftNodeIndex());
 			BVHNode* rightNode = nodes.at(currentNode->getRightNodeIndex());
-			float leftT = 0, rightT = 0;
-			bool leftHit = leftNode->getAABB().intercepts(ray, leftT);
-			bool rightHit = rightNode->getAABB().intercepts(ray, rightT);
+			float leftT = 0, rightT = 0, leftMinT = 0, rightMinT = 0;
+			bool leftHit = leftNode->getAABB().intercepts(ray, leftT, leftMinT);
+			bool rightHit = rightNode->getAABB().intercepts(ray, rightT, rightMinT);
 
 			if (leftHit && rightHit) {
 				closestNode = leftT <= rightT ? leftNode : rightNode;
 				BVHNode* farthestNode = leftT <= rightT ? rightNode : leftNode;
-				float farthestT = MAX(leftT, rightT);
-				hit_stack.push(StackItem(farthestNode, farthestT));
+				float farthestNodeMinT = leftT > rightT ? leftMinT : rightMinT;
+				hit_stack.push(StackItem(farthestNode, farthestNodeMinT));
 				currentNode = closestNode;
 			}
 			else if (leftHit || rightHit) {

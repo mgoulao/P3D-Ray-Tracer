@@ -100,7 +100,7 @@ private:
 
 	stack<StackItem> hit_stack;
 
-	int getLargestAxis(int* midPoint);
+	int getLargestAxis(int left_index, int right_index, float& midPoint);
 	void setNodeAABB(BVHNode* node, int left_index, int right_index);
 
 public:

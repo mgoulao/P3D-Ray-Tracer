@@ -119,3 +119,66 @@ bool AABB::intercepts(const Ray& ray, float& t)
 
 	return (t0 < t1 && t1 > 0);
 }
+
+bool AABB::intercepts(const Ray& ray, float& t, float& minT)
+{
+	double t0, t1;
+
+	float ox = ray.origin.x;
+	float oy = ray.origin.y;
+	float oz = ray.origin.z;
+	float dx = ray.direction.x;
+	float dy = ray.direction.y;
+	float dz = ray.direction.z;
+
+	float x0 = min.x;
+	float y0 = min.y;
+	float z0 = min.z;
+	float x1 = max.x;
+	float y1 = max.y;
+	float z1 = max.z;
+
+	float tx_min, ty_min, tz_min;
+	float tx_max, ty_max, tz_max;
+
+	float a = 1.0 / dx;
+	if (a >= 0) {
+		tx_min = (x0 - ox) * a;
+		tx_max = (x1 - ox) * a;
+	}
+	else {
+		tx_min = (x1 - ox) * a;
+		tx_max = (x0 - ox) * a;
+	}
+
+	float b = 1.0 / dy;
+	if (b >= 0) {
+		ty_min = (y0 - oy) * b;
+		ty_max = (y1 - oy) * b;
+	}
+	else {
+		ty_min = (y1 - oy) * b;
+		ty_max = (y0 - oy) * b;
+	}
+
+	float c = 1.0 / dz;
+	if (c >= 0) {
+		tz_min = (z0 - oz) * c;
+		tz_max = (z1 - oz) * c;
+	}
+	else {
+		tz_min = (z1 - oz) * c;
+		tz_max = (z0 - oz) * c;
+	}
+
+	//largest entering t value
+	t0 = MAX3(tx_min, ty_min, tz_min);
+
+	//smallest exiting t value
+	t1 = MIN3(tx_max, ty_max, tz_max);
+
+	t = (t0 < 0) ? t1 : t0;
+	minT = t0;
+
+	return (t0 < t1 && t1 > 0);
+}
