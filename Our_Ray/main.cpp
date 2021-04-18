@@ -50,7 +50,7 @@ bool jittering = true;
 bool jittering = false;
 #endif // ANTI_ALIASING
 
-Accelerator ACCELERATION_TYPE = Accelerator::BVH_ACC;
+Accelerator ACCELERATION_TYPE = Accelerator::GRID_ACC;
 
 unsigned int FrameCount = 0;
 

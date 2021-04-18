@@ -125,12 +125,7 @@ void BVH::build_recursive(int left_index, int right_index, BVHNode *node) {
 	}
 	else { // leaf
 		node->makeLeaf(left_index, right_index - left_index);
-		setNodeAABB(node, left_index, right_index);
 	}
-
-	//right_index, left_index and split_index refer to the indices in the objects vector
-	// do not confuse with left_nodde_index and right_node_index which refer to indices in the nodes vector. 
-	// node.index can have a index of objects vector or a index of nodes vector
 }
 
 bool BVH::Traverse(Ray& ray, Object** hit_obj, Vector& hit_point) {
@@ -143,9 +138,8 @@ bool BVH::Traverse(Ray& ray, Object** hit_obj, Vector& hit_point) {
 	if (!currentNode->getAABB().intercepts(ray, tmp)) {
 		return false;
 	}
-	bool euEstouFartoDaFaculdade = true;
-	bool NaoFazerNadaEQueEraGiro = true;
-	while (euEstouFartoDaFaculdade == NaoFazerNadaEQueEraGiro) {
+
+	while (true) {
 		BVHNode* closestNode = NULL;
 		if (!currentNode->isLeaf()) {
 			BVHNode* leftNode = nodes.at(currentNode->getLeftNodeIndex());
@@ -159,7 +153,6 @@ bool BVH::Traverse(Ray& ray, Object** hit_obj, Vector& hit_point) {
 				BVHNode* farthestNode = leftT <= rightT ? rightNode : leftNode;
 				float farthestT = MAX(leftT, rightT);
 				hit_stack.push(StackItem(farthestNode, farthestT));
-
 				currentNode = closestNode;
 			}
 			else if (leftHit || rightHit) {
@@ -189,13 +182,9 @@ bool BVH::Traverse(Ray& ray, Object** hit_obj, Vector& hit_point) {
 				while (stackItem.t > tmin) {
 					hit_stack.pop();
 					if (!hit_stack.size()) {
-						empty = true;
-						break;
+						return hit;
 					}
 					stackItem = hit_stack.top();
-				}
-				if (empty) {
-					break;
 				}
 				currentNode = stackItem.ptr;
 				hit_stack.pop();
@@ -219,9 +208,7 @@ bool BVH::Traverse(Ray& ray) {  //shadow ray with length
 		return false;
 	}
 
-	bool euEstouFartoDaFaculdade = true;
-	bool NaoFazerNadaEQueEraGiro = true;
-	while (euEstouFartoDaFaculdade == NaoFazerNadaEQueEraGiro) {
+	while (true) {
 		if (!currentNode->isLeaf()) {
 			BVHNode* leftNode = nodes.at(currentNode->getLeftNodeIndex());
 			BVHNode* rightNode = nodes.at(currentNode->getRightNodeIndex());
