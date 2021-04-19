@@ -8,6 +8,7 @@
 #include "scene.h"
 #include "sampler.h"
 #include "rayAccelerator.h"
+#include "animation.h"
 
 Vector Light::sampleLight(Vector passSample) {
 	return position;
@@ -179,6 +180,10 @@ AABB Sphere::GetBoundingBox() {
 	Vector a_min = Vector(center.x-radius, center.y- radius, center.z - radius);
 	Vector a_max = Vector(center.x + radius, center.y + radius, center.z + radius);
 	return(AABB(a_min, a_max));
+}
+
+void Sphere::translate(Vector& nPosition) {
+	center = nPosition; 
 }
 
 aaBox::aaBox(Vector& minPoint, Vector& maxPoint) //Axis aligned Box: another geometric object
@@ -498,7 +503,16 @@ Color Scene::GetSkyboxColor(Ray& r) {
 	return(Color(red, green, blue));
 }
 
+void Scene::addAnimation(Animation* animation) {
+	animations.push_back(animation);
+}
 
+void Scene::animationsStep() {
+	animationCurrentFrame = (animationCurrentFrame + 1) % animationNumberFrames;
+	for (auto& animation : animations) {
+		animation->step(animationCurrentFrame);
+	}
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -518,6 +532,7 @@ bool Scene::load_p3f(const char *name)
   char		token	[256];
   ifstream	file(name, ios::in);
   Material *	material;
+  Animation* animation = NULL;
 
   material = NULL;
 
@@ -538,7 +553,16 @@ bool Scene::load_p3f(const char *name)
 
 		material = new Material(cd, Kd, cs, Ks, Shine, T, ior, roughness);
       }
+	  else if (cmd == "a")    //Animation (spheres only)
+	  {
+		  Vector initialPosition;
+		  Vector finalPosition;
+		  float frames;
 
+		  file >> initialPosition >> finalPosition >> frames;
+		  animation = new Animation(initialPosition, finalPosition, frames);
+		  this->addAnimation(animation);
+	  }
       else if (cmd == "s")    //Sphere
       {
 	     Vector center;
@@ -546,9 +570,13 @@ bool Scene::load_p3f(const char *name)
          Sphere* sphere;
 
 	    file >> center >> radius;
-        sphere = new Sphere(center,radius);
+        sphere = new Sphere(center, radius);
 	    if (material) sphere->SetMaterial(material);
         this->addObject( (Object*) sphere);
+		if (animation != NULL) {
+			animation->addObject(sphere);
+			animation = NULL;
+		}
       }
 
 	  else if (cmd == "box")    //axis aligned box

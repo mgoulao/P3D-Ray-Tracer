@@ -32,7 +32,8 @@
 
 #define MAX_DEPTH 4
 #define ANTI_ALIASING 1
-#define USE_SKYBOX 0
+#define USE_SKYBOX 1
+#define MOTION_BLUR 0
 
 #if ANTI_ALIASING
 #define N 1 // super-sampling: 1 - disabled, >1 - enabled
@@ -50,7 +51,13 @@ bool jittering = true;
 bool jittering = false;
 #endif // ANTI_ALIASING
 
+#if MOTION_BLUR
 Accelerator ACCELERATION_TYPE = Accelerator::NONE;
+#define EXPOSURE_TIME 3
+#else
+Accelerator ACCELERATION_TYPE = Accelerator::BVH_ACC;
+#define EXPOSURE_TIME 1
+#endif
 
 unsigned int FrameCount = 0;
 
@@ -384,60 +391,65 @@ void timer(int value)
 }
 
 // Render function by primary ray casting from the eye towards the scene's objects
-void renderScene()
-{
-	int index_pos=0;
-	int index_col=0;
-	unsigned int counter = 0;
+void renderScene() {
 
 	if (drawModeEnabled) {
 		glClear(GL_COLOR_BUFFER_BIT);
 		scene->GetCamera()->SetEye(Vector(camX, camY, camZ));  //Camera motion
 	}
-	for (int y = 0; y < RES_Y; y++)
-	{
-		for (int x = 0; x < RES_X; x++)
-		{
-			/*std::chrono::nanoseconds time1, time2;
-			time1 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());*/
+	for (int t = 0; t < EXPOSURE_TIME; t++) {
+		int index_pos = 0;
+		int index_col = 0;
+		unsigned int counter = 0;
+		for (int y = 0; y < RES_Y; y++) {
+			for (int x = 0; x < RES_X; x++) {
+				/*std::chrono::nanoseconds time1, time2;
+				time1 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());*/
+				Vector pixel;  //viewport coordinates
+				Color color = Color(0, 0, 0);
 
-			Color color = Color(0,0,0); 
-			Vector pixel;  //viewport coordinates
+				Vector r[N2], s[N2];
 
-			Vector r[N2], s[N2];
-
-			for (int i = 0; i < N2; i++) {
-				r[i] = Vector((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, 0);
-				s[i] = Vector((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, 0);
-			}
-			
-			for (int p = 0; p < N; p++) {
-				for (int q = 0; q < N; q++) {
-					float offSetX = jittering ? r[p * N + q].x : 0.5f;
-					float offSetY = jittering ? r[p * N + q].y : 0.5f;
-					pixel.x = x + (p + offSetX) / N;
-					pixel.y = y + (q + offSetY) / N;
-
-					Ray ray = scene->GetCamera()->PrimaryRay(sample_unit_disk(), pixel);
-					color += rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / (N2);
+				for (int i = 0; i < N2; i++) {
+					r[i] = Vector((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, 0);
+					s[i] = Vector((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, 0);
 				}
+
+				for (int p = 0; p < N; p++) {
+					for (int q = 0; q < N; q++) {
+						float offSetX = jittering ? r[p * N + q].x : 0.5f;
+						float offSetY = jittering ? r[p * N + q].y : 0.5f;
+						pixel.x = x + (p + offSetX) / N;
+						pixel.y = y + (q + offSetY) / N;
+
+						Ray ray = scene->GetCamera()->PrimaryRay(sample_unit_disk(), pixel);
+						color += (rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / N2) / EXPOSURE_TIME;
+					}
+				}
+		
+				img_Data[counter++] += u8fromfloat((float)color.r());
+				img_Data[counter++] += u8fromfloat((float)color.g());
+				img_Data[counter++] += u8fromfloat((float)color.b());
+
+				if (drawModeEnabled) {
+					if (t == 0) {
+						vertices[index_pos++] = (float)x;
+						vertices[index_pos++] = (float)y;
+						colors[index_col++] = .0;
+						colors[index_col++] = .0;
+						colors[index_col++] = .0;
+						index_col -= 3;
+					}
+					colors[index_col++] += (float)color.r();
+					colors[index_col++] += (float)color.g();
+					colors[index_col++] += (float)color.b();
+				}
+		
+				/*time2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
+				printf("%lld, ", time2.count() - time1.count());*/
 			}
-			img_Data[counter++] = u8fromfloat((float)color.r());
-			img_Data[counter++] = u8fromfloat((float)color.g());
-			img_Data[counter++] = u8fromfloat((float)color.b());
-
-			if (drawModeEnabled) {
-				vertices[index_pos++] = (float)x;
-				vertices[index_pos++] = (float)y;
-				colors[index_col++] = (float)color.r();
-
-				colors[index_col++] = (float)color.g();
-
-				colors[index_col++] = (float)color.b();
-			}
-			/*time2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
-			printf("%lld, ", time2.count() - time1.count());*/
 		}
+		scene->animationsStep();
 	}
 
 	if(drawModeEnabled) {

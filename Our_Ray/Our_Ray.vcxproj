@@ -176,6 +176,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="animation.cpp" />
     <ClCompile Include="boundingBox.cpp" />
     <ClCompile Include="bvh.cpp" />
     <ClCompile Include="grid.cpp" />
@@ -185,6 +186,7 @@
     <ClCompile Include="vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="animation.h" />
     <ClInclude Include="boundingBox.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="color.h" />

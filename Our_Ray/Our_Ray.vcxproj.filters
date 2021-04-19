@@ -36,6 +36,9 @@
     <ClCompile Include="bvh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="animation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ray.h">
@@ -69,6 +72,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="macros.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="animation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

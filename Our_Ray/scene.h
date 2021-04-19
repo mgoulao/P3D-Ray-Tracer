@@ -12,6 +12,7 @@ using namespace std;
 #include "ray.h"
 #include "boundingBox.h"
 #include "rayAccelerator.h"
+#include "animation.h"
 
 #define MIN(a, b)		( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define MAX(a, b)		( ( a ) > ( b ) ? ( a ) : ( b ) )
@@ -108,7 +109,7 @@ class Object
 public:
 
 	Material* GetMaterial() { return m_Material; }
-	void SetMaterial( Material *a_Mat ) { m_Material = a_Mat; }
+	void SetMaterial(Material* a_Mat) { m_Material = a_Mat; }
 	virtual bool intercepts( Ray& r, float& dist ) = 0;
 	virtual Vector getNormal( Vector point ) = 0;
 	virtual AABB GetBoundingBox() { return AABB(); }
@@ -161,6 +162,7 @@ public:
 	Vector getNormal(Vector point);
 	AABB GetBoundingBox(void);
 	bool isSphere() { return true; }
+	void translate(Vector& nPosition);
 
 private:
 	Vector center;
@@ -222,6 +224,9 @@ public:
 
 	Accelerator getAcceleration();
 
+	void addAnimation(Animation* animation);
+	void animationsStep();
+
 	bool load_p3f(const char *name);  //Load NFF file method
 	void create_random_scene();
 	bool traverseScene(Ray& ray, Object** object, Vector& hitpoint);
@@ -229,6 +234,10 @@ public:
 	void build();
 	
 private:
+	vector<Animation*> animations;
+	int animationCurrentFrame = 0;
+	int animationNumberFrames = 9;
+
 	vector<Object *> objects;
 	vector<Light *> lights;
 
