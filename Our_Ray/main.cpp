@@ -32,11 +32,11 @@
 
 #define MAX_DEPTH 4
 #define ANTI_ALIASING 1
-#define USE_SKYBOX 1
+#define USE_SKYBOX 0
 #define MOTION_BLUR 0
 
 #if ANTI_ALIASING
-#define N 1 // super-sampling: 1 - disabled, >1 - enabled
+#define N 2 // super-sampling: 1 - disabled, >1 - enabled
 #define N2 N*N // n * n
 
 #define N_LIGHT_DECOMPOSE 1
@@ -397,6 +397,7 @@ void renderScene() {
 		glClear(GL_COLOR_BUFFER_BIT);
 		scene->GetCamera()->SetEye(Vector(camX, camY, camZ));  //Camera motion
 	}
+	int t = 0;
 	for (int t = 0; t < EXPOSURE_TIME; t++) {
 		int index_pos = 0;
 		int index_col = 0;
@@ -423,9 +424,11 @@ void renderScene() {
 						pixel.y = y + (q + offSetY) / N;
 
 						Ray ray = scene->GetCamera()->PrimaryRay(sample_unit_disk(), pixel);
-						color += (rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / N2) / EXPOSURE_TIME;
+						color += rayTracing(ray, 0, 1.0, s[p * N + q]).clamp() / (N2);
 					}
 				}
+
+				color = color / EXPOSURE_TIME;
 		
 				img_Data[counter++] += u8fromfloat((float)color.r());
 				img_Data[counter++] += u8fromfloat((float)color.g());
