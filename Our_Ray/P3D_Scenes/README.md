@@ -1,6 +1,6 @@
-# P3F Format File (with some extensions made by us)
+# P3F Format File (with some extensions made by us, area lights, simple translate animation)
 
-## INTRODUCTION
+## Introduction
 The P3F (P3D file Format) is designed as a minimal scene description 
 language for the scenes used to benchmark the ray tracers developed by 
 the students in P3D Course. It is based on the NFF (Neutral File Format) 
@@ -35,25 +35,33 @@ further information about the entity. Entities include:
 "box" - box primitive
 "p" - polygon primitive
 "pp" - polygonal patch primitive
-These are explained in depth below.DESCRIPTION
-Comment. Description:
- "#" [ string ]
+These are explained in depth below.
+
+## Description
+
+*Comment* 
+Description:
+ `# [ string ]`
 Format:
- # [ string ]
- As soon as a "#" character is detected, the rest of the line is 
+ `# [ string ]`
+As soon as a "#" character is detected, the rest of the line is 
 considered a comment.
 --------
-Viewing camera. Description:
- "v"
- "from" Fx Fy Fz
- "at" Ax Ay Az
- "up" Ux Uy Uz
- "angle" angle
- "hither" hither
- "resolution" xres yres
- "aperture" aperture_ratio
- "focal" focal_ratio
-Format:
+*Viewing camera* 
+Description:
+```
+ v
+ from Fx Fy Fz
+ at Ax Ay Az
+ up Ux Uy Uz
+ angle angle
+ hither hither
+ resolution xres yres
+ aperture aperture_ratio
+ focal focal_ratio
+```
+Format:`
+```
  v
  from %g %g %g
  at %g %g %g
@@ -62,7 +70,8 @@ Format:
  hither %g
  resolution %d %d
  aperture %g
- focal %g
+ focal %g`
+```
 The parameters are:
  From: the eye location in XYZ.
  At: a position to be at the center of the image, in XYZ world
@@ -82,17 +91,19 @@ The parameters are:
  Aspect ratio is 1.0.
  
 --------
-Background color. A color is simply RGB with values between 0 and 1:
- "bclr" R G B
+*Background color* 
+A color is simply RGB with values between 0 and 1:
+ `bclr R G B`
 Format:
- bclr %g %g %g
+ `bclr %g %g %g`
  If no background color is set, assume RGB = {0,0,0}.
 --------
-Environmental cubemap (skybox). Directory name containing the 6 maps of 
+*Environmental cubemap (skybox)* 
+Directory name containing the 6 maps of 
 the skybox:
- "env" cubemap_dir
+ `env cubemap_dir`
 Format:
- env %s
+ `env %s`
 --------
 *Positional light.* A light is defined by XYZ position. Description:
  `l X Y Z [R G B]`
@@ -102,16 +113,17 @@ Format:
 specified (i.e. the program can determine a useful intensity as desired); 
 the red/green/blue color of the light can optionally be specified.
 --------
-*Area light.* A area light is defined by XYZ position, a 'at' vector, and height and width. Description:
+*Area light*
+A area light is defined by XYZ position, a 'at' vector, and height and width. Description:
  `al X Y Z Ax Ay Az w h [R G B]`
 Format:
  `al %g %g %g %g %g %g [%g %g %g]`
-Area lights inherits positional light behaviour
 --------
-*Fill color and shading parameters.* Description:
- "f" red green blue Kd red green blue Ks Shine T index_of_refraction
+*Fill color and shading parameters* 
+Description:
+ `"f" red green blue Kd red green blue Ks Shine T index_of_refraction`
 Format:
- f %g %g %g %g %g %g %g %g %g %g %g Each RGB channel ranges from 0.0 to 1.0.
+ `f %g %g %g %g %g %g %g %g %g %g %g` Each RGB channel ranges from 0.0 to 1.0.
  The first RGB color regards the diffuse color. The second RGB 
 specifies the specular color. Kd is the diffuse component, Ks the 
 specular, Shine is the Phong cosine power for highlights and T is 
@@ -124,23 +136,31 @@ fractions of the contributions of the reflecting and transmitting rays).
  The fill color is used to shade the objects following it until a new 
 color is assigned.
 --------
-Cylinder or cone. A cylinder is defined as having a radius and an axis
+*Simple Translation Animation* 
+Description:
+ `a start_position end_position number_frames`
+Format:
+ `a %g %g %g %g %g %g %g`
+--------
+*Cylinder or cone* 
+A cylinder is defined as having a radius and an axis
  defined by two points, which also define the top and bottom edge of 
-the
- cylinder. A cone is defined similarly, the difference being that 
-the apex
- and base radii are different. The apex radius is defined as being 
-smaller
- than the base radius. Note that the surface exists without endcaps. 
-The
- cone or cylinder description:
- "c"
+the cylinder. A cone is defined similarly, the difference being that 
+the apex and base radii are different. The apex radius is defined as being 
+smaller than the base radius. Note that the surface exists without endcaps. 
+The cone or cylinder 
+Description:
+```
+ c
  base.x base.y base.z base_radius
  apex.x apex.y apex.z apex_radius
+```
 Format:
+```
  c
  %g %g %g %g
  %g %g %g %g
+```
  A negative value for both radii means that only the inside of the 
 object is visible (objects are normally considered one sided, with the 
 outside
@@ -149,21 +169,24 @@ cylinder or cone. Making them coincident could be used to define
 endcaps, but none of the test scenes currently make use of this 
 definition.
 --------
-Sphere. A sphere is defined by a radius and center position:
- "s" center.x center.y center.z radius
+*Sphere* 
+A sphere is defined by a radius and center position:
+ `s center.x center.y center.z radius`
 Format:
- s %g %g %g %g If the radius is negative, then only the sphere's inside is visible
+ `s %g %g %g %g`
+If the radius is negative, then only the sphere's inside is visible
  (objects are normally considered one sided, with the outside 
 visible).
  Currently none of the test scenes make use of negative radii.
 --------
 Plane. A plane is defined by the coordinates of three points:
- "pl" p1.x p1.y p1.z p2.x p2.y p2.z p3.x p3.y p3.z
+ `pl p1.x p1.y p1.z p2.x p2.y p2.z p3.x p3.y p3.z`
 Format:
- pl %g %g %g %g %g %g %g %g %g
+ `pl %g %g %g %g %g %g %g %g %g`
  The three points coplanar. 
 --------
-Polygon. A polygon is defined by a set of vertices. With these 
+*Polygon*
+A polygon is defined by a set of vertices. With these 
 databases,
  a polygon is defined to have all points coplanar. A polygon has 
 only
@@ -173,19 +196,26 @@ you
 edges must form a non-zero convex angle, so that the normal and side 
 visibility can be determined by using just the first three vertices. 
 Description:
- "p" total_vertices
+```
+ p total_vertices
  vert1.x vert1.y vert1.z
  [etc. for total_vertices vertices]
+```
 Format:
+```
  p %d
  [ %g %g %g ] <-- for total_vertices vertices
+```
 --------
-Mesh. A mesh is defined by a set of vertices and an indexed faces 
+*Mesh* 
+A mesh is defined by a set of vertices and an indexed faces 
 (triangles) set. With these databases, each triangle has the same 
 properties described above. The indexed face set starts with 1 (first
 vertex of the vertices set) or -1 (the last vertex of the vertices 
-set). Description:
- "mesh" total_vertices total_triangles
+set). 
+Description:
+```
+ mesh total_vertices total_triangles
  vert1.x vert1.y vert1.z
  [etc. for total_vertices vertices]
  index1 index2 index3
@@ -193,8 +223,10 @@ set). Description:
  p %d %d
  [ %g %g %g ] <-- for total_vertices vertices
  [ %d %d %d ] <-- for total_triangles triangles
+```
 --------
-Polygonal patch. A patch is defined by a set of vertices and their 
+*Polygonal patch* 
+A patch is defined by a set of vertices and their 
 normals.
  With these databases, a patch is defined to have all points coplanar.
  A patch has only one side, with the order of the vertices being
@@ -203,10 +235,14 @@ system).
  The first two edges must form a non-zero convex angle, so that the 
 normal
  and side visibility can be determined. Description:
- "pp" total_vertices
+```
+ pp total_vertices
  vert1.x vert1.y vert1.z norm1.x norm1.y norm1.z
  [etc. for total_vertices vertices]
+```
 Format:
+```
  pp %d
  [ %g %g %g %g %g %g ] <-- for total_vertices vertices
+``` 
 -------
