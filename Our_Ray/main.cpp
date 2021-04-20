@@ -36,19 +36,17 @@
 #define MOTION_BLUR 0
 
 #if ANTI_ALIASING
-#define N 2 // super-sampling: 1 - disabled, >1 - enabled
+#define N 3 // super-sampling: 1 - disabled, >1 - enabled
 #define N2 N*N // n * n
+bool jittering = true;
 
 #define N_LIGHT_DECOMPOSE 1
-
-bool jittering = true;
 #else
 #define N 1 // super-sampling: 1 - disabled, >1 - enabled
 #define N2 N*N // n * n
-
-#define N_LIGHT_DECOMPOSE 3
-
 bool jittering = false;
+
+#define N_LIGHT_DECOMPOSE 4
 #endif // ANTI_ALIASING
 
 #if MOTION_BLUR
@@ -79,7 +77,7 @@ long myTime, timebase = 0, frame = 0;
 char s[32];
 
 //Enable OpenGL drawing.  
-bool drawModeEnabled = true;
+bool drawModeEnabled = false;
 
 bool P3F_scene = true; //choose between P3F scene or a built-in random scene
 

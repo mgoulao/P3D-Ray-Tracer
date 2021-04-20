@@ -326,7 +326,16 @@ Scene::~Scene()
 	}
 	objects.erase();
 	*/
-	delete(acc);
+	if (acc != NULL) {
+		delete(acc);
+	}
+	if (animations.size()) {
+		for (vector<Animation*>::iterator it = animations.begin(); it != animations.end(); ) {
+			delete(*it);
+			it = animations.erase(it);
+		}
+	}
+
 }
 
 int Scene::getNumObjects()
